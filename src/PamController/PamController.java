@@ -330,7 +330,7 @@ public class PamController implements PamControllerInterface, PamSettings {
 		 * Set Locale to English so that formated writes to text fields
 		 * in dialogs use . and not , for the decimal. 
 		 */
-		Locale.setDefault(Locale.ENGLISH);
+		Locale.setDefault(Locale.TRADITIONAL_CHINESE);
 
 		/*
 		 * 15/8/07 Changed creation order of model and view. 

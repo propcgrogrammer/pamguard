@@ -289,6 +289,9 @@ public class SimProcess extends DaqSystem implements PamSettings {
 	 * and then overlays the individual objects data on top of each block of 
 	 * raw data. 
 	 */
+	/*
+	 * 產生隨機資料的實作方法
+	 */
 	private void generateData() {
 		RawDataUnit rdu;
 		int nChan = daqControl.acquisitionParameters.nChannels;

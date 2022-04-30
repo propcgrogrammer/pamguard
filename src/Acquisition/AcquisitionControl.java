@@ -83,6 +83,7 @@ import PamguardMVC.PamDataBlock;
 import PamguardMVC.PamProcess;
 import PamguardMVC.PamRawDataBlock;
 import PamguardMVC.dataOffline.OfflineDataLoadInfo;
+import RosBridge.ROSMsgDaq;
 
 /**
  * Main data acquisition control to get audio data from sound cards,
@@ -169,6 +170,10 @@ public class AcquisitionControl extends PamControlledUnit implements PamSettings
 		registerDaqSystem(new NIDAQProcess(this));
 		registerDaqSystem(new SmruDaqSystem(this));
 		registerDaqSystem(new SimProcess(this));
+		/*
+		 * 此處為 ROSMsgDaq 套件新增地方
+		 */
+		registerDaqSystem(new ROSMsgDaq(this));
 //		registerDaqSystem(new XArrayDaq(this));
 		if (SMRUEnable.isEnable()) {
 //			registerDaqSystem(new icListenSystem());

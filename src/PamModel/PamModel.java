@@ -541,6 +541,9 @@ final public class PamModel implements PamModelInterface, PamSettings {
 		 * ************* Start Sound Processing  Group *******************
 		 */
 
+		/*
+		 * [log]此為Data Model 新增 Sound Acquisition 模組的地方  at 2022/04/30
+		 */
 		mi = PamModuleInfo.registerControlledUnit("Acquisition.AcquisitionControl", "Sound Acquisition");	
 		mi.setToolTipText("Controls input of sound data from sound cards, NI cards, etc. ");
 		mi.setModulesMenuGroup(processingGroup);
