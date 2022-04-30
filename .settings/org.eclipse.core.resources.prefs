@@ -1,2 +1,5 @@
 eclipse.preferences.version=1
+encoding//src/Acquisition/AcquisitionControl.java=UTF-8
+encoding//src/PamModel/PamModel.java=UTF-8
 encoding//src/rawDeepLearningClassifer/segmenter/SegmenterProcess.java=UTF-8
+encoding//src/simulatedAcquisition/SimProcess.java=UTF-8
