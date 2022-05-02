@@ -1,7 +1,10 @@
 package RosBridge;
 
 import Acquisition.AcquisitionDialog;
+import Map.MapUtils;
 import PamView.dialog.PamGridBagContraints;
+
+import java.awt.BorderLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -12,6 +15,7 @@ import java.awt.event.ItemListener;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.math.BigDecimal;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -22,8 +26,11 @@ import java.util.concurrent.LinkedBlockingQueue;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.border.TitledBorder;
 import org.java_websocket.client.WebSocketClient;
@@ -181,6 +188,8 @@ public class ROSMsgDaqPanel extends JPanel {
         				+ ROSMsgDaqPanel.this.tf_topic.getText()
         				+ ROSMsgDaqPanel.this.tf_msg.getText();
         		
+        		params.uri = urlStr;
+        		
         		try{
         			
         			URL url = new URL(urlStr);
@@ -210,6 +219,36 @@ public class ROSMsgDaqPanel extends JPanel {
         			}
         			
         			System.out.println(responseContent.toString());
+        			
+        			
+        			if(!"".equals(responseContent.toString())) {
+        				
+        				
+        				JSONObject json = new JSONObject(responseContent.toString());  
+        				String data = json.get("data").toString();
+        				JSONArray array = new JSONArray(data);
+//        				String data = json.getString("data");  
+//        				System.out.println(data);  
+        				StringBuilder sb = new StringBuilder();
+
+        				for(Object obj : array) {
+        					sb.append(obj.toString()).append("\n");
+        				}
+        				
+        				JFrame frame = new JFrame("Server Data");
+        				frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        				
+        				JTextArea contentTxtArea = new JTextArea(sb.toString()); 
+        				contentTxtArea.setEditable(false);
+        				JScrollPane jsp = new JScrollPane(contentTxtArea);
+        				frame.getContentPane().add(jsp, BorderLayout.CENTER);
+        				frame.setSize(800, 600);
+        				frame.setLocationRelativeTo(null);
+        				frame.setResizable(true);
+        				frame.setVisible(true);
+        				
+        			}
+        			
         		}
         		catch (MalformedURLException e) {
         			e.printStackTrace();
@@ -220,15 +259,6 @@ public class ROSMsgDaqPanel extends JPanel {
         		}
         		
                 
-//                JSONObject jSONObject = new JSONObject();
-//                String str1 = ROSMsgDaqPanel.this.tf_topic.getText();
-//                String str2 = ROSMsgDaqPanel.this.tf_msg.getText();
-//                jSONObject.put("op", "subscribe");
-//                jSONObject.put("topic", str1);
-//                jSONObject.put("type", str2);
-//                String str3 = jSONObject.toString();
-//                params.m_ws.send(str3);
-//                System.out.println("subscribed message sent");
                 ROSMsgDaqPanel.this.b_connect.setEnabled(false);
                 ROSMsgDaqPanel.this.tf_status.setText("WebSocket Connection Successful");
                 ROSMsgDaqPanel.this.b_disconnect.setEnabled(true);
