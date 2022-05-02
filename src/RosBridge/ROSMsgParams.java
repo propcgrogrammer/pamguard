@@ -15,4 +15,7 @@ public class ROSMsgParams {
   public BlockingQueue<double[]> m_msgList_ch1;
   
   public BlockingQueue<double[]> m_msgList_ch2;
+  
+  public String uri = "";
+  
 }
