@@ -208,7 +208,7 @@ public class SimProcess extends DaqSystem implements PamSettings {
 	}
 	
 
-	private void updateObjectPositions(long timeMilliseconds) {
+	public void updateObjectPositions(long timeMilliseconds) {
 		int n = simObjectsDataBlock.getUnitsCount();
 		SimObjectDataUnit sdu;
 		ListIterator<SimObjectDataUnit> li = simObjectsDataBlock.getListIterator(0);

@@ -1,10 +1,10 @@
-package RosBridge;
+package PosBridge;
 
 import Acquisition.AudioDataQueue;
 import java.util.concurrent.BlockingQueue;
 import org.java_websocket.client.WebSocketClient;
 
-public class ROSMsgParams {
+public class POSMsgParams {
 	
   public WebSocketClient m_ws;
   
@@ -17,5 +17,7 @@ public class ROSMsgParams {
   public BlockingQueue<double[]> m_msgList_ch2;
   
   public String uri = "";
+  
+  public int sampleRate = 0;
   
 }

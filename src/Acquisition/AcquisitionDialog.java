@@ -452,9 +452,9 @@ public class AcquisitionDialog extends PamDialog {
 		
 		sP.add(BorderLayout.NORTH, p);
 		
-//		constraints.gridy++;
-//		constraints.gridx = 0;
-//		constraints.gridwidth = 4;
+		constraints.gridy++;
+		constraints.gridx = 0;
+		constraints.gridwidth = 4;
 		standardChannelListPanel = new StandardChannelListPanel();
 //		addComponent(p, channelListPanel, constraints);
 		

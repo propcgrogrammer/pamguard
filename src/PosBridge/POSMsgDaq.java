@@ -1,4 +1,4 @@
-package RosBridge;
+package PosBridge;
 
 import Acquisition.AcquisitionControl;
 import Acquisition.AcquisitionDialog;
@@ -14,6 +14,9 @@ import PamguardMVC.PamDataUnit;
 import PamguardMVC.PamObservable;
 import PamguardMVC.PamObserver;
 import simulatedAcquisition.SimObject;
+import simulatedAcquisition.SimObjectDataUnit;
+import simulatedAcquisition.SimObjectsDataBlock;
+import simulatedAcquisition.SimProcess;
 
 import java.awt.BorderLayout;
 import java.io.BufferedReader;
@@ -23,6 +26,7 @@ import java.io.Serializable;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ListIterator;
 import java.util.concurrent.BlockingQueue;
 
 import javax.swing.JComponent;
@@ -33,13 +37,19 @@ import javax.swing.JTextArea;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-public class ROSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
-	public static String plugin_name = "ROS Msg DAQ plugin";
+public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
+	public static String plugin_name = "Poseidoon plugin";
 
 	static AcquisitionControl acquisition_control;
 	
+	int sampleRate = 0;
+	
+	private SimObjectsDataBlock simObjectsDataBlock;
+	
+	private SimProcess sp = null;
+	
 	/*
-	 * Server抓到的資料當成 AudioFile 產生的音訊，並放到 AudioDataQueue 裡面
+	 * ServeræŠ“åˆ°çš„è³‡æ–™ç•¶æˆ� AudioFile ç”¢ç”Ÿçš„éŸ³è¨Šï¼Œä¸¦æ”¾åˆ° AudioDataQueue è£¡é�¢
 	 */
 	protected AudioDataQueue newDataUnits;
 	
@@ -57,9 +67,9 @@ public class ROSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 	
 	private int dataUnitSamples;
 
-	private ROSMsgDaqPanel ros_msg_daq_panel;
+	private POSMsgDaqPanel ros_msg_daq_panel;
 
-	private ROSMsgParams params = new ROSMsgParams();
+	private POSMsgParams params = new POSMsgParams();
 
 	private volatile boolean pam_stop;
 
@@ -97,8 +107,11 @@ public class ROSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 
 	@Override
 	public void setSampleRate(float sampleRate, boolean notify) {
-		// TODO Auto-generated method stub
-
+		
+		acquisition_control.acquisitionParameters.sampleRate = sampleRate;
+		this.sampleRate = (int) sampleRate;
+		//		System.out.println("Acquisition set sample rate to " + sampleRate);
+		
 	}
 
 	@Override
@@ -168,7 +181,7 @@ public class ROSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 	@Override
 	public JComponent getDaqSpecificDialogComponent(AcquisitionDialog acquisitionDialog) {
 		if (this.ros_msg_daq_panel == null)
-			this.ros_msg_daq_panel = new ROSMsgDaqPanel(acquisitionDialog, this.params);
+			this.ros_msg_daq_panel = new POSMsgDaqPanel(acquisitionDialog, this.params);
 		return this.ros_msg_daq_panel;
 	}
 
@@ -203,8 +216,8 @@ public class ROSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 		System.out.println("DaqSystem:Prepare system.");
 		
 		/*
-		 * 此部分程式碼來自 SimProcess Class
-		 * 目的為準備一個Thread將抓到的資料放到該Thread裡面做模擬
+		 * æ­¤éƒ¨åˆ†ç¨‹å¼�ç¢¼ä¾†è‡ª SimProcess Class
+		 * ç›®çš„ç‚ºæº–å‚™ä¸€å€‹Threadå°‡æŠ“åˆ°çš„è³‡æ–™æ”¾åˆ°è©²Threadè£¡é�¢å�šæ¨¡æ“¬
 		 */
 		newDataUnits = daqControl.getDaqProcess().getNewDataQueue();
 		genThread = new GenerationThread();
@@ -221,6 +234,7 @@ public class ROSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 		}
 		acquisition_control = daqControl;
 		this.params.m_audioDataQueue = acquisition_control.getDaqProcess().getNewDataQueue();
+		this.sp = new SimProcess(acquisition_control);
 		return true;
 	}
 
@@ -228,8 +242,8 @@ public class ROSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 	public boolean startSystem(AcquisitionControl daqControl) {
 		
 		/*
-		 * 此部分程式碼來自 SimProcess Class
-		 * 執行該Thread裡面的資料
+		 * æ­¤éƒ¨åˆ†ç¨‹å¼�ç¢¼ä¾†è‡ª SimProcess Class
+		 * åŸ·è¡Œè©²Threadè£¡é�¢çš„è³‡æ–™
 		 */
 		dontStop = true;
 
@@ -286,7 +300,7 @@ public class ROSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 	}
 	
 	/**
-	 * 此段程式碼來自 SimProcess Class
+	 * æ­¤æ®µç¨‹å¼�ç¢¼ä¾†è‡ª SimProcess Class
 	 *
 	 */
 	class GenerationThread implements Runnable {
@@ -319,9 +333,8 @@ public class ROSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 
 	}
 	
-	
 	/*
-	 * 產生隨機資料的實作方法
+	 * ç”¢ç”Ÿéš¨æ©Ÿè³‡æ–™çš„å¯¦ä½œæ–¹æ³•
 	 */
 	private void generateData() {
 		
@@ -329,7 +342,7 @@ public class ROSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 		int nChan = 1;
 		int phone = 0;
 		int nSource = 0;
-		int nSamples = 51200;
+		int nSamples = params.sampleRate;
 		
 //		double nse = 6.924;
 		double nse = 2.589;
@@ -352,6 +365,11 @@ public class ROSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 			
 		}
 		
+		PamCalendar.setSoundFileTimeInMillis(totalSamples * 1000L / (long)nSamples);
+		currentTimeMillis += 51200;
+//		this.sp.updateObjectPositions(currentTimeMillis);
+//		updateObjectPositions(currentTimeMillis);
+		totalSamples += nSamples;
 	}
 	
 	/**
@@ -415,7 +433,6 @@ public class ROSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 					i++;
 				}
 				
-				
 			}
 			
 		}
@@ -434,31 +451,31 @@ public class ROSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 
 		public void run() {
 			System.out.println("THREAD START");
-			ROSMsgDaq.this.params.m_msgList_ch1.clear();
-			ROSMsgDaq.this.params.m_msgList_ch2.clear();
-			ROSMsgDaq.this.pam_stop = false;
-			ROSMsgDaq.this.pam_running = true;
+			POSMsgDaq.this.params.m_msgList_ch1.clear();
+			POSMsgDaq.this.params.m_msgList_ch2.clear();
+			POSMsgDaq.this.pam_stop = false;
+			POSMsgDaq.this.pam_running = true;
 			RawDataUnit[] arrayOfRawDataUnit = new RawDataUnit[2];
 			double[][] arrayOfDouble = new double[2][9600];
 			long l = 0L;
-			while (!ROSMsgDaq.this.pam_stop && ROSMsgDaq.this.params.m_status) {
+			while (!POSMsgDaq.this.pam_stop && POSMsgDaq.this.params.m_status) {
 				try {
-					arrayOfDouble[0] = ROSMsgDaq.this.params.m_msgList_ch1.take();
-					arrayOfDouble[1] = ROSMsgDaq.this.params.m_msgList_ch2.take();
+					arrayOfDouble[0] = POSMsgDaq.this.params.m_msgList_ch1.take();
+					arrayOfDouble[1] = POSMsgDaq.this.params.m_msgList_ch2.take();
 				} catch (InterruptedException interruptedException) {
 					System.out.println("Exception Happen!!");
 					break;
 				}
-				long l1 = ROSMsgDaq.acquisition_control.getAcquisitionProcess().absSamplesToMilliseconds(l);
+				long l1 = POSMsgDaq.acquisition_control.getAcquisitionProcess().absSamplesToMilliseconds(l);
 				for (byte b = 0; b < 2; b++) {
 					arrayOfRawDataUnit[b] = new RawDataUnit(l1, b + 1, l, 9600L);
 					arrayOfRawDataUnit[b].setRawData(arrayOfDouble[b]);
-					ROSMsgDaq.this.params.m_audioDataQueue.addNewData(arrayOfRawDataUnit[b]);
+					POSMsgDaq.this.params.m_audioDataQueue.addNewData(arrayOfRawDataUnit[b]);
 				}
 				l += 9600L;
 				System.out.println("TOTAL TIME:" + (float) l / 96000.0F);
 			}
-			ROSMsgDaq.this.pam_running = false;
+			POSMsgDaq.this.pam_running = false;
 			System.out.println("THREAD END");
 		}
 
@@ -467,8 +484,8 @@ public class ROSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 	public void update(PamObservable paramPamObservable, PamDataUnit paramPamDataUnit) {
 	}
 
-	public ROSMsgDaq(AcquisitionControl paramAcquisitionControl) {
-		System.out.println("ROSMsgDaq init!!!");
+	public POSMsgDaq(AcquisitionControl paramAcquisitionControl) {
+		System.out.println("POSMsgDaq init!!!");
 		acquisition_control = paramAcquisitionControl;
 		this.params.m_audioDataQueue = new AudioDataQueue();
 		PamSettingManager.getInstance().registerSettings(this);

@@ -1,4 +1,4 @@
-package RosBridge;
+package PosBridge;
 
 import Acquisition.AcquisitionDialog;
 import Map.MapUtils;
@@ -41,10 +41,10 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.*;
 
-public class ROSMsgDaqPanel extends JPanel {
+public class POSMsgDaqPanel extends JPanel {
   private AcquisitionDialog acquisition_dialog;
   
-  private ROSMsgParams params;
+  private POSMsgParams params;
   
   private JPanel p_ros;
   
@@ -72,7 +72,8 @@ public class ROSMsgDaqPanel extends JPanel {
   
   private JButton button_cancel;
   
-  public ROSMsgDaqPanel(AcquisitionDialog paramAcquisitionDialog, final ROSMsgParams params) {
+  public POSMsgDaqPanel(AcquisitionDialog paramAcquisitionDialog, final POSMsgParams params) {
+	  
     this.acquisition_dialog = paramAcquisitionDialog;
     this.params = params;
     this.button_ok = paramAcquisitionDialog.getOkButton();
@@ -88,12 +89,17 @@ public class ROSMsgDaqPanel extends JPanel {
           }
         });
     setLayout(new BoxLayout(this, 1));
+    
+    
+    acquisition_dialog.getnChanComponent().setEditable(false);
+    
+    
     this.p_ros = new JPanel(new GridBagLayout());
     PamGridBagContraints pamGridBagContraints = new PamGridBagContraints();
-    this.p_ros.setBorder(new TitledBorder("ROS Bridge Server Settings"));
+    this.p_ros.setBorder(new TitledBorder("Poseidoon Server Settings"));
     this.p_ros.add(this.label_server = new JLabel("IP", 4), pamGridBagContraints);
     ((GridBagConstraints)pamGridBagContraints).gridx++;
-    this.p_ros.add(this.tf_server = new JTextField("http://127.0.0.1", 25), pamGridBagContraints);
+    this.p_ros.add(this.tf_server = new JTextField("127.0.0.1", 25), pamGridBagContraints);
     this.tf_server.setEditable(true);
     ((GridBagConstraints)pamGridBagContraints).gridx = 0;
     ((GridBagConstraints)pamGridBagContraints).gridy++;
@@ -109,8 +115,8 @@ public class ROSMsgDaqPanel extends JPanel {
     this.tf_msg.setEditable(true);
     ((GridBagConstraints)pamGridBagContraints).gridx = 0;
     ((GridBagConstraints)pamGridBagContraints).gridy++;
-    this.p_ros.add(this.tf_status = new JTextField("WebSocket Client Disconnected", 20), pamGridBagContraints);
-    this.tf_status.setEditable(true);
+//    this.p_ros.add(this.tf_status = new JTextField("WebSocket Client Disconnected", 20), pamGridBagContraints);
+//    this.tf_status.setEditable(true);
     ((GridBagConstraints)pamGridBagContraints).gridx++;
     this.p_ros.add(this.b_connect = new JButton("connect"), pamGridBagContraints);
     this.b_connect.setEnabled(true);
@@ -118,8 +124,8 @@ public class ROSMsgDaqPanel extends JPanel {
     	
     	public void actionPerformed(ActionEvent param1ActionEvent) {
     		
-    		String str = ROSMsgDaqPanel.this.tf_server.getText()+":"
-    				+ ROSMsgDaqPanel.this.tf_topic.getText();
+    		String str = "http://"+POSMsgDaqPanel.this.tf_server.getText()+":"
+    				+ POSMsgDaqPanel.this.tf_topic.getText();
     		
     		try {
     			
@@ -184,9 +190,9 @@ public class ROSMsgDaqPanel extends JPanel {
         		String line;
         		StringBuilder responseContent = new StringBuilder();
         		
-        		String urlStr = ROSMsgDaqPanel.this.tf_server.getText()+":"
-        				+ ROSMsgDaqPanel.this.tf_topic.getText()
-        				+ ROSMsgDaqPanel.this.tf_msg.getText();
+        		String urlStr = "http://"+POSMsgDaqPanel.this.tf_server.getText()+":"
+        				+ POSMsgDaqPanel.this.tf_topic.getText()
+        				+ POSMsgDaqPanel.this.tf_msg.getText();
         		
         		params.uri = urlStr;
         		
@@ -227,25 +233,43 @@ public class ROSMsgDaqPanel extends JPanel {
         				JSONObject json = new JSONObject(responseContent.toString());  
         				String data = json.get("data").toString();
         				JSONArray array = new JSONArray(data);
-//        				String data = json.getString("data");  
-//        				System.out.println(data);  
+        				String sampleRate = json.get("fs").toString();  
+        				System.out.println(sampleRate);  
+        				
+        				params.sampleRate = Integer.parseInt(sampleRate);
+        				acquisition_dialog.setSampleRate(Float.parseFloat(sampleRate));
+        				acquisition_dialog.getSampleRateComponent().setEditable(false);
+        				
         				StringBuilder sb = new StringBuilder();
 
         				for(Object obj : array) {
         					sb.append(obj.toString()).append("\n");
         				}
         				
-        				JFrame frame = new JFrame("Server Data");
+//        				JFrame frame = new JFrame("Server Data");
+//        				frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+//        				
+//        				JTextArea contentTxtArea = new JTextArea(sb.toString()); 
+//        				contentTxtArea.setEditable(false);
+//        				JScrollPane jsp = new JScrollPane(contentTxtArea);
+//        				frame.getContentPane().add(jsp, BorderLayout.CENTER);
+//        				frame.setSize(800, 600);
+//        				frame.setLocationRelativeTo(null);
+//        				frame.setResizable(true);
+//        				frame.setVisible(true);
+        				
+        				JFrame frame = new JFrame("Connect Successful");
         				frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         				
-        				JTextArea contentTxtArea = new JTextArea(sb.toString()); 
+        				JTextArea contentTxtArea = new JTextArea("Connected to Poseidoon Server"); 
         				contentTxtArea.setEditable(false);
         				JScrollPane jsp = new JScrollPane(contentTxtArea);
         				frame.getContentPane().add(jsp, BorderLayout.CENTER);
-        				frame.setSize(800, 600);
+        				frame.setSize(400, 200);
         				frame.setLocationRelativeTo(null);
         				frame.setResizable(true);
         				frame.setVisible(true);
+        				
         				
         			}
         			
@@ -258,10 +282,10 @@ public class ROSMsgDaqPanel extends JPanel {
         			conn.disconnect();
         		}
         		
-                
-                ROSMsgDaqPanel.this.b_connect.setEnabled(false);
-                ROSMsgDaqPanel.this.tf_status.setText("WebSocket Connection Successful");
-                ROSMsgDaqPanel.this.b_disconnect.setEnabled(true);
+				
+        		POSMsgDaqPanel.this.b_connect.setEnabled(false);
+//        		POSMsgDaqPanel.this.tf_status.setText("WebSocket Connection Successful");
+        		POSMsgDaqPanel.this.b_disconnect.setEnabled(true);
              } 
     		
     	}
@@ -282,15 +306,15 @@ public class ROSMsgDaqPanel extends JPanel {
           public void itemStateChanged(ItemEvent param1ItemEvent) {
             if (param1ItemEvent.getStateChange() == 1) {
               System.out.println("lock the layout");
-              ROSMsgDaqPanel.this.tf_msg.setEditable(false);
-              ROSMsgDaqPanel.this.tf_topic.setEditable(false);
-              ROSMsgDaqPanel.this.tf_server.setEditable(false);
+              POSMsgDaqPanel.this.tf_msg.setEditable(false);
+              POSMsgDaqPanel.this.tf_topic.setEditable(false);
+              POSMsgDaqPanel.this.tf_server.setEditable(false);
             } 
             if (param1ItemEvent.getStateChange() == 2) {
               System.out.println("free the layout");
-              ROSMsgDaqPanel.this.tf_msg.setEditable(true);
-              ROSMsgDaqPanel.this.tf_topic.setEditable(true);
-              ROSMsgDaqPanel.this.tf_server.setEditable(true);
+              POSMsgDaqPanel.this.tf_msg.setEditable(true);
+              POSMsgDaqPanel.this.tf_topic.setEditable(true);
+              POSMsgDaqPanel.this.tf_server.setEditable(true);
             } 
           }
         });
