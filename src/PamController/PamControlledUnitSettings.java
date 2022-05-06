@@ -264,6 +264,7 @@ public class PamControlledUnitSettings implements Serializable, ManagedParameter
 
 		byte[] serialisedData = getSerialisedByteArray();
 		try {
+			if(unitType != null) {
 			oos.writeUTF(unitType);
 			if (unitName == null) {
 				oos.writeUTF(unitType);
@@ -274,6 +275,7 @@ public class PamControlledUnitSettings implements Serializable, ManagedParameter
 			oos.writeLong(versionNo);
 			oos.writeInt(serialisedData.length);
 			oos.write(serialisedData);
+			}
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
