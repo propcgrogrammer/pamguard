@@ -74,6 +74,11 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 	private volatile boolean pam_stop;
 
 	private volatile boolean pam_running;
+	
+	private boolean isFirst = true;
+	
+	private volatile String timestamp = "";
+	
 
 	@Override
 	public String getUnitName() {
@@ -268,8 +273,7 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 
 	@Override
 	public void stopSystem(AcquisitionControl daqControl) {
-		// TODO Auto-generated method stub
-
+		dontStop = false;
 	}
 
 	@Override
@@ -321,7 +325,7 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 				while (newDataUnits.getQueueSize() > acquisition_control.acquisitionParameters.nChannels*2) {
 					if (dontStop == false) break;
 					try {
-						Thread.sleep(2);
+//						Thread.sleep(2);
 					} catch (Exception ex) {
 						ex.printStackTrace();
 					}
@@ -350,7 +354,6 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 		double[] channelData;
 		long currentTimeMillis = startTimeMillis + totalSamples / 1000;
 		
-		int totalSamples = 0;
 		
 		for(int i = 0; i< nChan; i++) {
 			channelData = new double[nSamples];
@@ -361,12 +364,17 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 			
 			rdu = new RawDataUnit(currentTimeMillis, 1<<i, totalSamples, nSamples);
 			rdu.setRawData(channelData, true);
+			
 			newDataUnits.addNewData(rdu, i);
+			if(isFirst) {
+				newDataUnits.addNewData(rdu, i);
+				isFirst = false;
+			}
 			
 		}
 		
-		PamCalendar.setSoundFileTimeInMillis(totalSamples * 1000L / (long)nSamples);
-		currentTimeMillis += 51200;
+//		PamCalendar.setSoundFileTimeInMillis(totalSamples * 1000L / (long)nSamples);
+//		currentTimeMillis += nSamples;
 //		this.sp.updateObjectPositions(currentTimeMillis);
 //		updateObjectPositions(currentTimeMillis);
 		totalSamples += nSamples;
@@ -389,7 +397,16 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 		
 		try{
 			
-			URL url = new URL(urlStr);
+			String getUrlStr = urlStr;
+			
+			if(!"".equals(this.timestamp.toString())) {
+				getUrlStr += "?time_stamp=" + this.timestamp.toString();
+			}
+			else {
+				getUrlStr = urlStr;
+			}
+			
+			URL url = new URL(getUrlStr);
 			conn = (HttpURLConnection) url.openConnection();
 			
 			// Request setup
@@ -424,6 +441,11 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 				JSONObject json = new JSONObject(responseContent.toString());  
 				String dataContent = json.get("data").toString();
 				JSONArray array = new JSONArray(dataContent);
+				
+				String timestamp_tmp = json.get("time_stamp").toString();  
+				this.timestamp = timestamp_tmp.substring(0,19);
+				
+				System.out.println(timestamp); 
  
 				StringBuilder sb = new StringBuilder();
 
