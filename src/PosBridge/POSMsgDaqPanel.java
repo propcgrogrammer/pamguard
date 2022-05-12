@@ -28,6 +28,7 @@ import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
@@ -224,31 +225,46 @@ public class POSMsgDaqPanel extends JPanel {
         				reader.close();
         			}
         			
-        			System.out.println(responseContent.toString());
+        			
         			
         			
         			if(!"".equals(responseContent.toString())) {
         				
+        				System.out.println(responseContent.toString());
+        				JSONArray array = new JSONArray(responseContent.toString());
+        				System.out.println(array);
         				
-        				JSONObject json = new JSONObject(responseContent.toString());  
-        				String data = json.get("data").toString();
-        				JSONArray array = new JSONArray(data);
-        				String sampleRate = json.get("fs").toString();  
-        				System.out.println(sampleRate);  
+        				String sampleRate = "51200";
+        				
+        				StringBuilder sb = new StringBuilder();
+        				
+        				for(Object obj : array) {
+        					
+        					JSONObject json = new JSONObject(obj.toString());  
+        					String data = json.get("data").toString();
+        					JSONArray array1 = new JSONArray(data);
+        					
+        					for(Object obj1 : array1) {
+            					sb.append(obj1.toString()).append("\n");
+            				}
+        					
+        					sampleRate = json.get("fs").toString();
+        					System.out.println(sampleRate); 
+        				}
+        				
+//        				JSONObject json = new JSONObject(responseContent.toString());  
+//        				String data = json.get("data").toString();
+//        				JSONArray array = new JSONArray(data);
+//        				String sampleRate = json.get("fs").toString();  
+//        				System.out.println(sampleRate);  
         				
         				params.sampleRate = Integer.parseInt(sampleRate);
         				acquisition_dialog.setSampleRate(Float.parseFloat(sampleRate));
         				acquisition_dialog.getSampleRateComponent().setEditable(false);
         				
-        				StringBuilder sb = new StringBuilder();
-
-        				for(Object obj : array) {
-        					sb.append(obj.toString()).append("\n");
-        				}
         				
 //        				JFrame frame = new JFrame("Server Data");
-//        				frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-//        				
+//        				frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);      				
 //        				JTextArea contentTxtArea = new JTextArea(sb.toString()); 
 //        				contentTxtArea.setEditable(false);
 //        				JScrollPane jsp = new JScrollPane(contentTxtArea);
@@ -258,34 +274,39 @@ public class POSMsgDaqPanel extends JPanel {
 //        				frame.setResizable(true);
 //        				frame.setVisible(true);
         				
-        				JFrame frame = new JFrame("Connect Successful");
-        				frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        				JOptionPane.showMessageDialog(null, "Connected to Poseidoon Server Successfully !!");
         				
-        				JTextArea contentTxtArea = new JTextArea("Connected to Poseidoon Server"); 
-        				contentTxtArea.setEditable(false);
-        				JScrollPane jsp = new JScrollPane(contentTxtArea);
-        				frame.getContentPane().add(jsp, BorderLayout.CENTER);
-        				frame.setSize(400, 200);
-        				frame.setLocationRelativeTo(null);
-        				frame.setResizable(true);
-        				frame.setVisible(true);
+//        				JFrame frame = new JFrame("Connect Successful");
+//        				frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+//        				JTextArea contentTxtArea = new JTextArea("Connected to Poseidoon Server"); 
+//        				contentTxtArea.setEditable(false);
+//        				JScrollPane jsp = new JScrollPane(contentTxtArea);
+//        				frame.getContentPane().add(jsp, BorderLayout.CENTER);
+//        				frame.setSize(400, 200);
+//        				frame.setLocationRelativeTo(null);
+//        				frame.setResizable(true);
+//        				frame.setVisible(true);
         				
+        				POSMsgDaqPanel.this.b_connect.setEnabled(false);
+        	//        	POSMsgDaqPanel.this.tf_status.setText("WebSocket Connection Successful");
+        				POSMsgDaqPanel.this.b_disconnect.setEnabled(true);
         				
         			}
         			
         		}
         		catch (MalformedURLException e) {
         			e.printStackTrace();
+        			JOptionPane.showMessageDialog(null, "Malformed URL !!");
+        			
         		} catch (IOException e) {
         			e.printStackTrace();
+        			JOptionPane.showMessageDialog(null, "fail to connect server !!");
+        			
         		}finally {
         			conn.disconnect();
         		}
         		
 				
-        		POSMsgDaqPanel.this.b_connect.setEnabled(false);
-//        		POSMsgDaqPanel.this.tf_status.setText("WebSocket Connection Successful");
-        		POSMsgDaqPanel.this.b_disconnect.setEnabled(true);
              } 
     		
     	}

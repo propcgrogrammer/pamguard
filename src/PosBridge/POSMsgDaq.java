@@ -31,6 +31,7 @@ import java.util.concurrent.BlockingQueue;
 
 import javax.swing.JComponent;
 import javax.swing.JFrame;
+import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 
@@ -432,27 +433,34 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 				reader.close();
 			}
 			
-			System.out.println(responseContent.toString());
-			
-			
 			if(!"".equals(responseContent.toString())) {
 				
+				System.out.println(responseContent.toString());
+				JSONArray array = new JSONArray(responseContent.toString());
+				System.out.println(array);
 				
-				JSONObject json = new JSONObject(responseContent.toString());  
-				String dataContent = json.get("data").toString();
-				JSONArray array = new JSONArray(dataContent);
+				String sampleRate = "51200";
 				
-				String timestamp_tmp = json.get("time_stamp").toString();  
-				this.timestamp = timestamp_tmp.substring(0,19);
-				
-				System.out.println(timestamp); 
- 
 				StringBuilder sb = new StringBuilder();
-
-				int i=0;
+				
 				for(Object obj : array) {
-					data[i] = Double.parseDouble(obj.toString());
-					i++;
+					
+					JSONObject json = new JSONObject(obj.toString());  
+					String dataContent = json.get("data").toString();
+					JSONArray array1 = new JSONArray(dataContent);
+					
+					int i=0;
+					for(Object obj1 : array1) {
+						data[i] = Double.parseDouble(obj1.toString());
+						i++;
+					}
+					
+					sampleRate = json.get("fs").toString();
+					System.out.println(sampleRate); 
+					String timestamp_tmp = json.get("time_stamp").toString();  
+				    this.timestamp = timestamp_tmp.substring(0,19);
+				    System.out.println(timestamp);
+				    
 				}
 				
 			}
@@ -460,8 +468,12 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 		}
 		catch (MalformedURLException e) {
 			e.printStackTrace();
+			JOptionPane.showMessageDialog(null, "Malformed URL !!");
+			
 		} catch (IOException e) {
 			e.printStackTrace();
+			JOptionPane.showMessageDialog(null, "fail to connect server !!");
+			
 		}finally {
 			conn.disconnect();
 		}
