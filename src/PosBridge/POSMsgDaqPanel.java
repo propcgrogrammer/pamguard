@@ -195,11 +195,15 @@ public class POSMsgDaqPanel extends JPanel {
         				+ POSMsgDaqPanel.this.tf_topic.getText()
         				+ POSMsgDaqPanel.this.tf_msg.getText();
         		
+        		String urlConn = "http://"+POSMsgDaqPanel.this.tf_server.getText()+":"
+        				+ POSMsgDaqPanel.this.tf_topic.getText()
+        				+ "/connect/";
+        		
         		params.uri = urlStr;
         		
         		try{
         			
-        			URL url = new URL(urlStr);
+        			URL url = new URL(urlConn);
         			conn = (HttpURLConnection) url.openConnection();
         			
         			// Request setup
@@ -231,26 +235,63 @@ public class POSMsgDaqPanel extends JPanel {
         			if(!"".equals(responseContent.toString())) {
         				
         				System.out.println(responseContent.toString());
-        				JSONArray array = new JSONArray(responseContent.toString());
-        				System.out.println(array);
+        				
+//        				JSONArray array = new JSONArray(responseContent.toString());
+//        				System.out.println(array);
         				
         				String sampleRate = "51200";
+        				String connStat = "fail";
         				
         				StringBuilder sb = new StringBuilder();
         				
-        				for(Object obj : array) {
-        					
-        					JSONObject json = new JSONObject(obj.toString());  
-        					String data = json.get("data").toString();
-        					JSONArray array1 = new JSONArray(data);
-        					
-        					for(Object obj1 : array1) {
-            					sb.append(obj1.toString()).append("\n");
-            				}
+        				JSONObject json = new JSONObject(responseContent.toString());
+        				
+        				if(json.has("fs")) {
         					
         					sampleRate = json.get("fs").toString();
-        					System.out.println(sampleRate); 
+        					
         				}
+        				
+        				
+        				if(json.has("status")) {
+        					
+        					connStat = json.get("status").toString();
+        					if("success".equals(connStat)) {
+        						JOptionPane.showMessageDialog(null, "Connected to Poseidoon Server Successfully !!");
+        						
+        						POSMsgDaqPanel.this.b_connect.setEnabled(false);
+        			        	//        	POSMsgDaqPanel.this.tf_status.setText("WebSocket Connection Successful");
+        			        	POSMsgDaqPanel.this.b_disconnect.setEnabled(true);
+        						
+        					}else {
+        						JOptionPane.showMessageDialog(null, "Fail to connect Poseidoon Server !!");
+        					}
+        				}
+        				
+        				
+        				
+//        				for(Object obj : array) {
+//        					
+//        					JSONObject json = new JSONObject(obj.toString());  
+//        					
+//        					if(json.has("record")) {
+//        						
+//        						String recordStr = json.get("record").toString();
+//        						int record = Integer.parseInt(recordStr);
+//        					}
+//        					if(json.has("data")) {
+//        						String data = json.get("data").toString();
+//        						JSONArray array1 = new JSONArray(data);
+//        					
+//        						for(Object obj1 : array1) {
+//        							sb.append(obj1.toString()).append("\n");
+//        						}
+//        					
+//        						sampleRate = json.get("fs").toString();
+//        						System.out.println(sampleRate); 
+//        					}
+//        					
+//        				}
         				
 //        				JSONObject json = new JSONObject(responseContent.toString());  
 //        				String data = json.get("data").toString();
@@ -274,8 +315,6 @@ public class POSMsgDaqPanel extends JPanel {
 //        				frame.setResizable(true);
 //        				frame.setVisible(true);
         				
-        				JOptionPane.showMessageDialog(null, "Connected to Poseidoon Server Successfully !!");
-        				
 //        				JFrame frame = new JFrame("Connect Successful");
 //        				frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 //        				JTextArea contentTxtArea = new JTextArea("Connected to Poseidoon Server"); 
@@ -287,9 +326,6 @@ public class POSMsgDaqPanel extends JPanel {
 //        				frame.setResizable(true);
 //        				frame.setVisible(true);
         				
-        				POSMsgDaqPanel.this.b_connect.setEnabled(false);
-        	//        	POSMsgDaqPanel.this.tf_status.setText("WebSocket Connection Successful");
-        				POSMsgDaqPanel.this.b_disconnect.setEnabled(true);
         				
         			}
         			

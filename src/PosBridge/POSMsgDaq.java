@@ -26,6 +26,8 @@ import java.io.Serializable;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.ListIterator;
 import java.util.concurrent.BlockingQueue;
 
@@ -79,6 +81,11 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 	private boolean isFirst = true;
 	
 	private volatile String timestamp = "";
+	
+	private int record = 0;
+	private int countData = 0;
+	
+	private List<double[]> dataNoiseLst = new ArrayList<double[]>();
 	
 
 	@Override
@@ -354,6 +361,11 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 		
 		double[] channelData;
 		long currentTimeMillis = startTimeMillis + totalSamples / 1000;
+		channelData = new double[nSamples];
+		
+		if(!generateNoise(channelData, nse)) {
+			JOptionPane.showMessageDialog(null, "Invalid Poseidoon Server Data !!");
+		}
 		
 		
 		for(int i = 0; i< nChan; i++) {
@@ -361,16 +373,20 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 			
 //			double dbNse = 96.812;
 			double dbNse = 20.25;
-			generateNoise(channelData, nse);
 			
-			rdu = new RawDataUnit(currentTimeMillis, 1<<i, totalSamples, nSamples);
-			rdu.setRawData(channelData, true);
+				for(int j = 0 ; j<this.countData && this.countData == this.dataNoiseLst.size() ; j++) {
+					rdu = new RawDataUnit(currentTimeMillis, 1<<i, totalSamples, nSamples);
+					rdu.setRawData(this.dataNoiseLst.get(j), true);
 			
-			newDataUnits.addNewData(rdu, i);
-			if(isFirst) {
-				newDataUnits.addNewData(rdu, i);
-				isFirst = false;
-			}
+					newDataUnits.addNewData(rdu, i);
+					if(isFirst) {
+						newDataUnits.addNewData(rdu, i);
+						isFirst = false;
+					}
+					
+					totalSamples += nSamples;
+				}
+			
 			
 		}
 		
@@ -378,7 +394,7 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 //		currentTimeMillis += nSamples;
 //		this.sp.updateObjectPositions(currentTimeMillis);
 //		updateObjectPositions(currentTimeMillis);
-		totalSamples += nSamples;
+//		totalSamples += nSamples;
 	}
 	
 	/**
@@ -386,7 +402,7 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 	 * @param data data array to fill
 	 * @param noise noise level 
 	 */
-	private void generateNoise(double[] data, double noise) {
+	private boolean generateNoise(double[] data, double noise) {
 		
 		HttpURLConnection conn = null;
         
@@ -395,6 +411,9 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 		StringBuilder responseContent = new StringBuilder();
 		
 		String urlStr = this.params.uri;
+		
+//		int record = 0;
+//		int countData = 0;
 		
 		try{
 			
@@ -443,23 +462,49 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 				
 				StringBuilder sb = new StringBuilder();
 				
+				String recordStr = "0";
+				
+//				int record = 0;
+//				int countData = 0;
+				
+				this.dataNoiseLst = new ArrayList<double[]>();
+				
+				countData = 0;
+				
 				for(Object obj : array) {
 					
 					JSONObject json = new JSONObject(obj.toString());  
-					String dataContent = json.get("data").toString();
-					JSONArray array1 = new JSONArray(dataContent);
 					
-					int i=0;
-					for(Object obj1 : array1) {
-						data[i] = Double.parseDouble(obj1.toString());
-						i++;
+					if(json.has("record")) {
+						
+						recordStr = json.get("record").toString();
+						record = Integer.parseInt(recordStr);
 					}
-					
-					sampleRate = json.get("fs").toString();
-					System.out.println(sampleRate); 
-					String timestamp_tmp = json.get("time_stamp").toString();  
-				    this.timestamp = timestamp_tmp.substring(0,19);
-				    System.out.println(timestamp);
+					if(json.has("data")) {
+						String dataContent = json.get("data").toString();
+						JSONArray array1 = new JSONArray(dataContent);
+						
+						int i=0;
+						for(Object obj1 : array1) {
+							data[i] = Double.parseDouble(obj1.toString());
+							i++;
+						}
+						
+						this.dataNoiseLst.add(data);
+						
+						sampleRate = json.get("fs").toString();
+						System.out.println(sampleRate); 
+						String timestamp_tmp = json.get("time_stamp").toString();  
+						this.timestamp = timestamp_tmp.substring(0,19);
+						
+						
+						countData++;
+						
+						System.out.println("The newest timestamp => " + timestamp);
+						System.out.println("get "+ recordStr + " records data ");
+						System.out.println("This phase data is index => " + countData );
+						
+					}
 				    
 				}
 				
@@ -477,6 +522,8 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 		}finally {
 			conn.disconnect();
 		}
+		
+		return record == countData;
 		
 	}
 	
