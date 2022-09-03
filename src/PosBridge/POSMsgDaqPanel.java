@@ -197,7 +197,7 @@ public class POSMsgDaqPanel extends JPanel {
         		
         		String urlConn = "http://"+POSMsgDaqPanel.this.tf_server.getText()+":"
         				+ POSMsgDaqPanel.this.tf_topic.getText()
-        				+ "/connect/";
+        				+ "/connect_pamguard/";
         		
         		params.uri = urlStr;
         		

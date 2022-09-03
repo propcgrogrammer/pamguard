@@ -479,7 +479,7 @@ public class Pamguard {
 		private static String getTimeStamp(long timeInMillis) {
 			Calendar c = Calendar.getInstance();
 			c.setTimeInMillis(timeInMillis);
-			TimeZone defaultTimeZone = TimeZone.getTimeZone("UTC");
+			TimeZone defaultTimeZone = TimeZone.getTimeZone("GMT 08:00");
 			c.setTimeZone(defaultTimeZone);
 			DateFormat df = new SimpleDateFormat("yyyyMMdd_HHmmss");
 			df.setTimeZone(defaultTimeZone);

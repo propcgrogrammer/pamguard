@@ -19,16 +19,21 @@ import simulatedAcquisition.SimObjectsDataBlock;
 import simulatedAcquisition.SimProcess;
 
 import java.awt.BorderLayout;
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.Serializable;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 
 import javax.swing.JComponent;
@@ -37,6 +42,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 
+import org.apache.commons.collections.map.HashedMap;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -86,6 +92,18 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 	private int countData = 0;
 	
 	private List<double[]> dataNoiseLst = new ArrayList<double[]>();
+	
+	private HttpURLConnection conn = null;
+	
+	private URL url = null;
+	
+	private BufferedReader reader = null;
+	
+	private HttpURLConnection urlConnection = null;  
+	
+	private OutputStream os = null;
+	
+	private InputStream is = null;
 	
 
 	@Override
@@ -273,7 +291,7 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 		}
 //		Thread thread = new Thread(new DataStreamThread());
 //		thread.start();
-		setStreamStatus(2);
+		setStreamStatus(10);
 		TopToolBar.enableStartButton(false);
 		TopToolBar.enableStopButton(true);
 		return true;
@@ -311,7 +329,127 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 		return plugin_name;
 	}
 	
-	/**
+	public Map estConnection() {
+		
+		String urlStr = this.params.uri;
+		String getUrlStr = urlStr;
+		
+//		HttpURLConnection urlConnection = null;  
+//		OutputStream os = null;
+//		InputStream is = null;
+		
+		Map<String, Object> rtnMap = new HashMap<String, Object>();
+		
+		try {
+			
+			URL url = new URL(getUrlStr);
+			urlConnection = (HttpURLConnection) url.openConnection();
+			urlConnection.setRequestMethod("POST");
+			urlConnection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+			
+			urlConnection.setDoOutput(true);
+			os = urlConnection.getOutputStream();
+			is = urlConnection.getInputStream();
+			
+			
+			if(!"".equals(this.timestamp.toString())) {
+				String param = "time_stamp="+this.timestamp.toString();
+				os.write(param.getBytes());
+			}
+			os.flush();
+			
+			
+			int responseCode = urlConnection.getResponseCode();
+			System.out.println("POST Response Code :: " + responseCode);
+			
+			if (responseCode == HttpURLConnection.HTTP_OK) { //success
+				is = urlConnection.getInputStream();
+				BufferedReader in = new BufferedReader(new InputStreamReader(is));
+				String inputLine;
+				StringBuffer response = new StringBuffer();
+
+				while ((inputLine = in.readLine()) != null) {
+					response.append(inputLine);
+				}
+
+				// print result
+				System.out.println(response.toString());
+				
+				if(!"".equals(response.toString())) {
+					
+					System.out.println(response.toString());
+					JSONArray array = new JSONArray(response.toString());
+//					System.out.println(array);
+					
+					String sampleRate = "51200";
+					
+					StringBuilder sb = new StringBuilder();
+					
+					String recordStr = "0";
+					
+//					int record = 0;
+//					int countData = 0;
+					
+					this.dataNoiseLst = new ArrayList<double[]>();
+					
+					countData = 0;
+					
+					for(Object obj : array) {
+						
+						JSONObject json = new JSONObject(obj.toString());  
+						
+						if(json.has("record")) {
+							
+							recordStr = json.get("record").toString();
+							record = Integer.parseInt(recordStr);
+						}
+						
+					}
+					
+				}
+				
+				
+			} else {
+				System.out.println("POST request not worked");
+			}
+			
+		} catch (MalformedURLException e) {
+			return null;
+		} catch (IOException ex) {
+			return null;
+        }
+		
+		rtnMap.put("HttpURLConnection", urlConnection);
+		rtnMap.put("OutputStream", os);
+		rtnMap.put("InputStream", is);
+		
+		return rtnMap;	
+	}
+	
+	public boolean closeConn() {
+		
+		try {
+			if(os != null) {
+				os.close();
+				os = null;
+			}
+			if(is != null) {
+				is.close();
+				is = null;
+			}
+			if(urlConnection != null) {
+				urlConnection.disconnect();
+				urlConnection = null;
+			}
+		} catch (IOException e) {
+			return false;
+		}
+		return true;
+		
+	}
+	
+	
+	/**n
 	 * æ­¤æ®µç¨‹å¼�ç¢¼ä¾†è‡ª SimProcess Class
 	 *
 	 */
@@ -320,10 +458,8 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 		@Override
 		public void run() {
 			stillRunning = true;
-//			generateData();
-		
 			
-			while (dontStop) {
+			  while (dontStop) {
 				generateData();
 				/*
 				 * this is the point we wait at for the other thread to
@@ -332,13 +468,10 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 				 */
 				while (newDataUnits.getQueueSize() > acquisition_control.acquisitionParameters.nChannels*2) {
 					if (dontStop == false) break;
-					try {
-//						Thread.sleep(2);
-					} catch (Exception ex) {
-						ex.printStackTrace();
-					}
 				}
-			}
+			  }
+			
+//			closeConnection();
 			
 			stillRunning = false;
 		}
@@ -363,6 +496,8 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 		long currentTimeMillis = startTimeMillis + totalSamples / 1000;
 		channelData = new double[nSamples];
 		
+		
+		
 		if(!generateNoise(channelData, nse)) {
 			JOptionPane.showMessageDialog(null, "Invalid Poseidoon Server Data !!");
 		}
@@ -375,7 +510,7 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 			double dbNse = 20.25;
 			
 				for(int j = 0 ; j<this.countData && this.countData == this.dataNoiseLst.size() ; j++) {
-					rdu = new RawDataUnit(currentTimeMillis, 1<<i, totalSamples, nSamples);
+					rdu = new RawDataUnit(currentTimeMillis/2, 1<<i, totalSamples, nSamples/2);
 					rdu.setRawData(this.dataNoiseLst.get(j), true);
 			
 					newDataUnits.addNewData(rdu, i);
@@ -397,6 +532,70 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 //		totalSamples += nSamples;
 	}
 	
+	
+	private boolean openConnection() {
+		
+		String urlStr = this.params.uri;
+		String getUrlStr = urlStr;
+		
+		if(!"".equals(this.timestamp.toString())) {
+			getUrlStr += "?time_stamp=" + this.timestamp.toString();
+		}
+		else {
+			getUrlStr = urlStr;
+		}
+		
+		try {
+			
+			this.url = new URL(getUrlStr);
+			this.conn = (HttpURLConnection) url.openConnection();
+			
+			
+			// Request setup
+			this.conn.setRequestMethod("GET");
+			this.conn.setConnectTimeout(2000);// 5000 milliseconds = 5 seconds
+			this.conn.setReadTimeout(2000);
+			
+			
+			int status = this.conn.getResponseCode();
+			
+			if (status >= 300) {
+				this.reader = new BufferedReader(new InputStreamReader(conn.getErrorStream()));
+			}
+			else {
+				this.reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+			}
+			
+		} catch (MalformedURLException e) {
+			// TODO Auto-generated catch block
+			JOptionPane.showMessageDialog(null, "Malformed URL !!");
+			return false;
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			JOptionPane.showMessageDialog(null, "fail to connect server !!");
+			return false;
+		}
+		return true;
+		
+	}
+	
+	private boolean closeConnection() {
+		
+		try {
+			this.reader.close();
+			this.conn.disconnect();
+			
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			JOptionPane.showMessageDialog(null, "fail to close connection !!");
+			return false;
+		}
+		return true;
+		
+	}
+	
+	
+	
 	/**
 	 * Generate noise on a data channel
 	 * @param data data array to fill
@@ -404,59 +603,62 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 	 */
 	private boolean generateNoise(double[] data, double noise) {
 		
-		HttpURLConnection conn = null;
-        
-        BufferedReader reader;
-		String line;
-		StringBuilder responseContent = new StringBuilder();
-		
+		StringBuffer responseContent = new StringBuffer();
 		String urlStr = this.params.uri;
-		
-//		int record = 0;
-//		int countData = 0;
+		String getUrlStr = urlStr;
 		
 		try{
 			
-			String getUrlStr = urlStr;
+			URL url = new URL(getUrlStr);
+			
+			HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
+			urlConnection.setRequestMethod("POST");
+			urlConnection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+			urlConnection.setDoOutput(true);
+			
+			
+			
+//			if(urlConnection == null) {
+//				urlConnection = (HttpURLConnection) url.openConnection();
+//				urlConnection.setRequestMethod("POST");
+//				urlConnection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+//				urlConnection.setDoOutput(true);
+//				
+//			}
+			
+			
+			OutputStream os = urlConnection.getOutputStream();
 			
 			if(!"".equals(this.timestamp.toString())) {
-				getUrlStr += "?time_stamp=" + this.timestamp.toString();
+				String param = "time_stamp="+this.timestamp.toString();
+				os.write(param.getBytes());
 			}
-			else {
-				getUrlStr = urlStr;
-			}
+			os.flush();
+			os.close();
 			
-			URL url = new URL(getUrlStr);
-			conn = (HttpURLConnection) url.openConnection();
-			
-			// Request setup
-			conn.setRequestMethod("GET");
-			conn.setConnectTimeout(5000);// 5000 milliseconds = 5 seconds
-			conn.setReadTimeout(5000);
 			
 			// Test if the response from the server is successful
-			int status = conn.getResponseCode();
+			int responseCode = urlConnection.getResponseCode();
 			
-			if (status >= 300) {
-				reader = new BufferedReader(new InputStreamReader(conn.getErrorStream()));
-				while ((line = reader.readLine()) != null) {
-					responseContent.append(line);
+			if(responseCode == HttpURLConnection.HTTP_OK) {
+				
+				InputStream is = urlConnection.getInputStream();
+				
+				BufferedReader in = new BufferedReader(
+						new InputStreamReader(is));
+				String inputLine;
+				
+				while((inputLine = in.readLine()) != null) {
+					responseContent.append(inputLine);
 				}
-				reader.close();
+				in.close();
 			}
-			else {
-				reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-				while ((line = reader.readLine()) != null) {
-					responseContent.append(line).append("\n");
-				}
-				reader.close();
-			}
+		
 			
 			if(!"".equals(responseContent.toString())) {
 				
 				System.out.println(responseContent.toString());
 				JSONArray array = new JSONArray(responseContent.toString());
-				System.out.println(array);
 				
 				String sampleRate = "51200";
 				
@@ -464,8 +666,6 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 				
 				String recordStr = "0";
 				
-//				int record = 0;
-//				int countData = 0;
 				
 				this.dataNoiseLst = new ArrayList<double[]>();
 				
@@ -495,7 +695,7 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 						sampleRate = json.get("fs").toString();
 						System.out.println(sampleRate); 
 						String timestamp_tmp = json.get("time_stamp").toString();  
-						this.timestamp = timestamp_tmp.substring(0,19);
+						this.timestamp = timestamp_tmp.substring(0,23);
 						
 						
 						countData++;
@@ -518,10 +718,7 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 		} catch (IOException e) {
 			e.printStackTrace();
 			JOptionPane.showMessageDialog(null, "fail to connect server !!");
-			
-		}finally {
-			conn.disconnect();
-		}
+		} 
 		
 		return record == countData;
 		
