@@ -34,6 +34,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.BlockingQueue;
 
 import javax.swing.JComponent;
@@ -250,9 +251,10 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 		 * æ­¤éƒ¨åˆ†ç¨‹å¼�ç¢¼ä¾†è‡ª SimProcess Class
 		 * ç›®çš„ç‚ºæº–å‚™ä¸€å€‹Threadå°‡æŠ“åˆ°çš„è³‡æ–™æ”¾åˆ°è©²Threadè£¡é�¢å�šæ¨¡æ“¬
 		 */
-		newDataUnits = daqControl.getDaqProcess().getNewDataQueue();
-		genThread = new GenerationThread();
-		theThread = new Thread(genThread);
+		this.newDataUnits = daqControl.getDaqProcess().getNewDataQueue();
+		if (this.newDataUnits == null) return false;
+//		genThread = new GenerationThread();
+//		theThread = new Thread(genThread);
 		startTimeMillis = System.currentTimeMillis();
 		totalSamples = 0;
 		dataUnitSamples = (int) (daqControl.acquisitionParameters.sampleRate/10);
@@ -277,7 +279,8 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 		 * åŸ·è¡Œè©²Threadè£¡é�¢çš„è³‡æ–™
 		 */
 		dontStop = true;
-
+		genThread = new GenerationThread();
+		theThread = new Thread(genThread);
 		theThread.start();
 		
 		
@@ -291,7 +294,7 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 		}
 //		Thread thread = new Thread(new DataStreamThread());
 //		thread.start();
-		setStreamStatus(10);
+		setStreamStatus(STREAM_RUNNING);
 		TopToolBar.enableStartButton(false);
 		TopToolBar.enableStopButton(true);
 		return true;
@@ -300,12 +303,13 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 	@Override
 	public void stopSystem(AcquisitionControl daqControl) {
 		dontStop = false;
+		setStreamStatus(STREAM_CLOSED);
 	}
 
 	@Override
 	public boolean isRealTime() {
 		// TODO Auto-generated method stub
-		return false;
+		return true;
 	}
 
 	@Override
@@ -466,8 +470,13 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 				 * get it's act together on a timer and use this data
 				 * unit, then set it's reference to zero.
 				 */
-				while (newDataUnits.getQueueSize() > acquisition_control.acquisitionParameters.nChannels*2) {
-					if (dontStop == false) break;
+//				while (newDataUnits.getQueueSize() > acquisition_control.acquisitionParameters.nChannels*2) {
+//					if (dontStop == false) break;
+//				}
+				try {
+					Thread.sleep(100);
+				} catch (Exception ex) {
+					ex.printStackTrace();
 				}
 			  }
 			
@@ -502,6 +511,7 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 			JOptionPane.showMessageDialog(null, "Invalid Poseidoon Server Data !!");
 		}
 		
+//		generateNoise1(channelData, nse);
 		
 		for(int i = 0; i< nChan; i++) {
 			channelData = new double[nSamples];
@@ -509,15 +519,17 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 //			double dbNse = 96.812;
 			double dbNse = 20.25;
 			
+			
 				for(int j = 0 ; j<this.countData && this.countData == this.dataNoiseLst.size() ; j++) {
+//			    for(int j = 0 ; j<this.dataNoiseLst.size() ; j++) {
 					rdu = new RawDataUnit(currentTimeMillis/2, 1<<i, totalSamples, nSamples/2);
 					rdu.setRawData(this.dataNoiseLst.get(j), true);
 			
 					newDataUnits.addNewData(rdu, i);
-					if(isFirst) {
-						newDataUnits.addNewData(rdu, i);
-						isFirst = false;
-					}
+//					if(isFirst) {
+//						newDataUnits.addNewData(rdu, i);
+//						isFirst = false;
+//					}
 					
 					totalSamples += nSamples;
 				}
@@ -594,6 +606,17 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 		
 	}
 	
+	private void generateNoise1(double[] data, double noise) {
+		
+		Random rand = new Random();
+		
+		for(int i=0;i<51200;i++) {
+			data[i] = rand.nextDouble();
+//			data[i] = 0.125;
+		}
+		
+		this.dataNoiseLst.add(data);
+	}
 	
 	
 	/**
