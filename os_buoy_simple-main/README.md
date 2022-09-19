@@ -6,7 +6,7 @@
 ## Install package
 Window  
 
-    $ pip install numpy fastapi uvicorn[standard] requests
+    $ pip install numpy fastapi uvicorn[standard] requests pydantic soundfile matplotlib
 
 Mac OS
 
@@ -26,3 +26,7 @@ uvicorn web: https://www.uvicorn.org/
 - Second Terminal
 
     $ python simplebuoy_client.py (example)
+
+- Second Terminal (plot time series data)   
+  
+    $ python raw_data_client.py
