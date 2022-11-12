@@ -31,7 +31,7 @@ def animate(url, delay):
         global data_buffer
         global fs
         global x
-        r = requests.post(url, json=payload)
+        r = requests.get(url, json=payload)
         response_json = r.json()
         response_size = response_json[0]['record']
         print("Get data size:", response_size)
