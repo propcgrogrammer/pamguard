@@ -32,9 +32,9 @@ async def getConnection():#連接測試
     return {'status':'success','fs':fs}
 
 
-@app.post("/raw_data/")
-async def getPamGuardData(raw_data_arg: RawData):#存進來的資料
-    print("[RECEIVE] time_stamp : ", raw_data_arg.time_stamp)
+@app.get("/raw_data/")
+async def getPamGuardData(time_stamp: Optional[datetime]=None):#存進來的資料
+    print("[RECEIVE] time_stamp : ", time_stamp)
     global id_number, return_time_stamp, wav_file_i
 
     #fs = 51200
@@ -44,6 +44,7 @@ async def getPamGuardData(raw_data_arg: RawData):#存進來的資料
     #data = np.sin(2*np.pi*freq*t)*amp
 
     record = int(random.uniform(0, 4))
+    record = 4
     print("[SENT] Amount of return values: ", record)
     if record == 0:
         return [{'record':record}]
