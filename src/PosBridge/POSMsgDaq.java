@@ -21,6 +21,8 @@ import simulatedAcquisition.SimProcess;
 import java.awt.BorderLayout;
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -30,6 +32,7 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
@@ -57,6 +60,8 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 	private SimObjectsDataBlock simObjectsDataBlock;
 	
 	private SimProcess sp = null;
+	
+	private FileOutputStream fos = null;
 	
 	/*
 	 * ServeræŠ“åˆ°çš„è³‡æ–™ç•¶æˆ� AudioFile ç”¢ç”Ÿçš„éŸ³è¨Šï¼Œä¸¦æ”¾åˆ° AudioDataQueue è£¡é�¢
@@ -283,6 +288,19 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 		theThread = new Thread(genThread);
 		theThread.start();
 		
+		System.out.println("Write File Name => E:\\output.txt");
+		File file = new File("E:\\output.txt");
+		try {
+			if (file.createNewFile()) {
+			    System.out.println("File created: " + file.getName());
+			} else {
+			    System.out.println("File already exists.");
+			}
+			this.fos = new FileOutputStream(file);
+		} catch (IOException e) {
+			
+		}
+		
 		
 		System.out.println("DaqSystem:Start system.");
 		System.out.println("m_status:" + this.params.m_status);
@@ -304,6 +322,12 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 	public void stopSystem(AcquisitionControl daqControl) {
 		dontStop = false;
 		setStreamStatus(STREAM_CLOSED);
+		
+		try {
+			this.fos.close();
+		} catch (IOException e) {
+			
+		}
 	}
 
 	@Override
@@ -519,20 +543,52 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 //			double dbNse = 96.812;
 			double dbNse = 20.25;
 			
-			
-				for(int j = 0 ; j<this.countData && this.countData == this.dataNoiseLst.size() ; j++) {
-//			    for(int j = 0 ; j<this.dataNoiseLst.size() ; j++) {
-					rdu = new RawDataUnit(currentTimeMillis/2, 1<<i, totalSamples, nSamples/2);
-					rdu.setRawData(this.dataNoiseLst.get(j), true);
-			
-					newDataUnits.addNewData(rdu, i);
-//					if(isFirst) {
-//						newDataUnits.addNewData(rdu, i);
-//						isFirst = false;
-//					}
+			System.out.println("Comparing data ..... ");
+			System.out.println("Total data size => "+this.dataNoiseLst.size());
+			for(int j = 0 ; j<this.countData && this.countData == this.dataNoiseLst.size() ; j++) {
+				for(int k = j+1 ; k<this.countData && this.countData == this.dataNoiseLst.size() ; k++) {
+					int same = 0;
+					double[] one = this.dataNoiseLst.get(j);
+					double[] two = this.dataNoiseLst.get(k);
 					
-					totalSamples += nSamples;
+					for(int m = 0;m<one.length;m++) {
+						if(one[m] == two[m]) {
+							same++;
+						}
+					}
+					if(same == one.length) {
+						System.out.println("find the same array : ( "+ j +" ," + k + " )");
+					}
+				}	
+			}
+			
+			
+			for(int j = 0 ; j<this.countData && this.countData == this.dataNoiseLst.size() ; j++) {
+				rdu = new RawDataUnit(currentTimeMillis/2, 1<<i, totalSamples, nSamples/2);
+				rdu.setRawData(this.dataNoiseLst.get(j), true);
+		
+				System.out.println("drawing "+(j+1)+" record data");
+				
+				
+				try {
+					this.fos.write("********(DRAWING DATA )*************\r\n".getBytes());
+					this.fos.write(Arrays.toString(this.dataNoiseLst.get(j)).subSequence(0, 300).toString().getBytes());
+					this.fos.write("\r\n*********************\r\n\r\n".getBytes());
+					this.fos.flush();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
 				}
+				
+				
+				newDataUnits.addNewData(rdu, i);
+				if(isFirst) {
+					newDataUnits.addNewData(rdu, i);
+					isFirst = false;
+				}
+					
+				totalSamples += nSamples;
+			}
 			
 			
 		}
@@ -632,32 +688,17 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 		
 		try{
 			
-			URL url = new URL(getUrlStr);
-			
-			HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
-			urlConnection.setRequestMethod("POST");
-			urlConnection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
-			urlConnection.setDoOutput(true);
-			
-			
-			
-//			if(urlConnection == null) {
-//				urlConnection = (HttpURLConnection) url.openConnection();
-//				urlConnection.setRequestMethod("POST");
-//				urlConnection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
-//				urlConnection.setDoOutput(true);
-//				
-//			}
-			
-			
-			OutputStream os = urlConnection.getOutputStream();
 			
 			if(!"".equals(this.timestamp.toString())) {
-				String param = "time_stamp="+this.timestamp.toString();
-				os.write(param.getBytes());
+				getUrlStr = getUrlStr + "?time_stamp="+this.timestamp.toString();
 			}
-			os.flush();
-			os.close();
+			URL url = new URL(getUrlStr);
+			
+			
+			HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
+			urlConnection.setRequestMethod("GET");
+			urlConnection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+			urlConnection.setDoOutput(true);
 			
 			
 			// Test if the response from the server is successful
@@ -680,7 +721,15 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 			
 			if(!"".equals(responseContent.toString())) {
 				
-				System.out.println(responseContent.toString());
+//				System.out.println(responseContent.toString());
+				
+				this.fos.write("*********************\r\n".getBytes());
+				this.fos.write(responseContent.toString().subSequence(0, 300).toString().getBytes());
+				this.fos.write("\r\n*********************\r\n\r\n".getBytes());
+				this.fos.flush();
+				System.out.println("Write File Successfully !!");
+				
+				
 				JSONArray array = new JSONArray(responseContent.toString());
 				
 				String sampleRate = "51200";
@@ -705,15 +754,28 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 					}
 					if(json.has("data")) {
 						String dataContent = json.get("data").toString();
+						
+						this.fos.write(("[data] :" + dataContent.substring(0,500).toString()).getBytes());
+						this.fos.write("\r\n".getBytes());
+						this.fos.flush();
+						
 						JSONArray array1 = new JSONArray(dataContent);
 						
 						int i=0;
 						for(Object obj1 : array1) {
 							data[i] = Double.parseDouble(obj1.toString());
+//							this.fos.write("--------------------------\r\n".getBytes());
+//							this.fos.write(("data["+i+"] :" + data[i]).getBytes());
+//							this.fos.write(" >> ".getBytes());
+//							this.fos.flush();
 							i++;
 						}
 						
-						this.dataNoiseLst.add(data);
+						double[] copyData = new double[data.length];
+						System.arraycopy(data, 0, copyData, 0, data.length);
+						
+						this.dataNoiseLst.add(copyData);
+						
 						
 						sampleRate = json.get("fs").toString();
 						System.out.println(sampleRate); 
@@ -728,6 +790,7 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 						System.out.println("This phase data is index => " + countData );
 						
 					}
+					this.fos.write("\r\n".getBytes());
 				    
 				}
 				
