@@ -45,6 +45,8 @@ import org.json.*;
 public class POSMsgDaqPanel extends JPanel {
   private AcquisitionDialog acquisition_dialog;
   
+  private boolean isConnected = false;
+  
   private POSMsgParams params;
   
   private JPanel p_ros;
@@ -258,9 +260,8 @@ public class POSMsgDaqPanel extends JPanel {
         					connStat = json.get("status").toString();
         					if("success".equals(connStat)) {
         						JOptionPane.showMessageDialog(null, "Connected to Poseidoon Server Successfully !!");
-        						
+        						isConnected = true;
         						POSMsgDaqPanel.this.b_connect.setEnabled(false);
-        			        	//        	POSMsgDaqPanel.this.tf_status.setText("WebSocket Connection Successful");
         			        	POSMsgDaqPanel.this.b_disconnect.setEnabled(true);
         						
         					}else {
@@ -353,7 +354,17 @@ public class POSMsgDaqPanel extends JPanel {
     
     ((GridBagConstraints)pamGridBagContraints).gridx++;
     this.p_ros.add(this.b_disconnect = new JButton("disconnect"), pamGridBagContraints);
-    this.b_disconnect.setEnabled(false);
+    this.b_disconnect.setEnabled(true);
+    this.b_disconnect.addActionListener(new ActionListener() {
+    	public void actionPerformed(ActionEvent param1ActionEvent) {
+    		
+    		isConnected = false;
+			POSMsgDaqPanel.this.b_connect.setEnabled(true);
+        	POSMsgDaqPanel.this.b_disconnect.setEnabled(false);
+        	JOptionPane.showMessageDialog(null, "Disconnected from Poseidoon Server Successfully !!");
+			
+    	}
+    });
     
     ((GridBagConstraints)pamGridBagContraints).gridx = 0;
     ((GridBagConstraints)pamGridBagContraints).gridy++;
