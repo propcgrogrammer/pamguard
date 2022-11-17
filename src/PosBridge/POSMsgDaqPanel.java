@@ -93,7 +93,6 @@ public class POSMsgDaqPanel extends JPanel {
         });
     setLayout(new BoxLayout(this, 1));
     
-    
     acquisition_dialog.getnChanComponent().setEditable(false);
     
     
@@ -118,8 +117,6 @@ public class POSMsgDaqPanel extends JPanel {
     this.tf_msg.setEditable(true);
     ((GridBagConstraints)pamGridBagContraints).gridx = 0;
     ((GridBagConstraints)pamGridBagContraints).gridy++;
-//    this.p_ros.add(this.tf_status = new JTextField("WebSocket Client Disconnected", 20), pamGridBagContraints);
-//    this.tf_status.setEditable(true);
     ((GridBagConstraints)pamGridBagContraints).gridx++;
     this.p_ros.add(this.b_connect = new JButton("connect"), pamGridBagContraints);
     this.b_connect.setEnabled(true);
@@ -180,16 +177,16 @@ public class POSMsgDaqPanel extends JPanel {
             } 
     		
     		if (params.m_status) {
-                params.m_ws.connect();
-                try {
-                  Thread.sleep(1000L);
-                } catch (Exception exception) {
-                  System.out.println(exception);
-                } 
+            params.m_ws.connect();
+            try {
+              Thread.sleep(1000L);
+            } catch (Exception exception) {
+              System.out.println(exception);
+            } 
                 
-                HttpURLConnection conn = null;
+            HttpURLConnection conn = null;
                 
-                BufferedReader reader;
+            BufferedReader reader;
         		String line;
         		StringBuilder responseContent = new StringBuilder();
         		
@@ -231,15 +228,9 @@ public class POSMsgDaqPanel extends JPanel {
         				reader.close();
         			}
         			
-        			
-        			
-        			
         			if(!"".equals(responseContent.toString())) {
         				
         				System.out.println(responseContent.toString());
-        				
-//        				JSONArray array = new JSONArray(responseContent.toString());
-//        				System.out.println(array);
         				
         				String sampleRate = "51200";
         				String connStat = "fail";
@@ -249,11 +240,8 @@ public class POSMsgDaqPanel extends JPanel {
         				JSONObject json = new JSONObject(responseContent.toString());
         				
         				if(json.has("fs")) {
-        					
         					sampleRate = json.get("fs").toString();
-        					
         				}
-        				
         				
         				if(json.has("status")) {
         					
@@ -262,71 +250,15 @@ public class POSMsgDaqPanel extends JPanel {
         						JOptionPane.showMessageDialog(null, "Connected to Poseidoon Server Successfully !!");
         						isConnected = true;
         						POSMsgDaqPanel.this.b_connect.setEnabled(false);
-        			        	POSMsgDaqPanel.this.b_disconnect.setEnabled(true);
-        						
+        			      POSMsgDaqPanel.this.b_disconnect.setEnabled(true);
         					}else {
         						JOptionPane.showMessageDialog(null, "Fail to connect Poseidoon Server !!");
         					}
         				}
         				
-        				
-        				
-//        				for(Object obj : array) {
-//        					
-//        					JSONObject json = new JSONObject(obj.toString());  
-//        					
-//        					if(json.has("record")) {
-//        						
-//        						String recordStr = json.get("record").toString();
-//        						int record = Integer.parseInt(recordStr);
-//        					}
-//        					if(json.has("data")) {
-//        						String data = json.get("data").toString();
-//        						JSONArray array1 = new JSONArray(data);
-//        					
-//        						for(Object obj1 : array1) {
-//        							sb.append(obj1.toString()).append("\n");
-//        						}
-//        					
-//        						sampleRate = json.get("fs").toString();
-//        						System.out.println(sampleRate); 
-//        					}
-//        					
-//        				}
-        				
-//        				JSONObject json = new JSONObject(responseContent.toString());  
-//        				String data = json.get("data").toString();
-//        				JSONArray array = new JSONArray(data);
-//        				String sampleRate = json.get("fs").toString();  
-//        				System.out.println(sampleRate);  
-        				
         				params.sampleRate = Integer.parseInt(sampleRate);
         				acquisition_dialog.setSampleRate(Float.parseFloat(sampleRate));
         				acquisition_dialog.getSampleRateComponent().setEditable(false);
-        				
-        				
-//        				JFrame frame = new JFrame("Server Data");
-//        				frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);      				
-//        				JTextArea contentTxtArea = new JTextArea(sb.toString()); 
-//        				contentTxtArea.setEditable(false);
-//        				JScrollPane jsp = new JScrollPane(contentTxtArea);
-//        				frame.getContentPane().add(jsp, BorderLayout.CENTER);
-//        				frame.setSize(800, 600);
-//        				frame.setLocationRelativeTo(null);
-//        				frame.setResizable(true);
-//        				frame.setVisible(true);
-        				
-//        				JFrame frame = new JFrame("Connect Successful");
-//        				frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-//        				JTextArea contentTxtArea = new JTextArea("Connected to Poseidoon Server"); 
-//        				contentTxtArea.setEditable(false);
-//        				JScrollPane jsp = new JScrollPane(contentTxtArea);
-//        				frame.getContentPane().add(jsp, BorderLayout.CENTER);
-//        				frame.setSize(400, 200);
-//        				frame.setLocationRelativeTo(null);
-//        				frame.setResizable(true);
-//        				frame.setVisible(true);
-        				
         				
         			}
         			
@@ -342,15 +274,9 @@ public class POSMsgDaqPanel extends JPanel {
         		}finally {
         			conn.disconnect();
         		}
-        		
-				
-             } 
-    		
+        } 
     	}
     });
-    
-    
-    
     
     ((GridBagConstraints)pamGridBagContraints).gridx++;
     this.p_ros.add(this.b_disconnect = new JButton("disconnect"), pamGridBagContraints);
@@ -359,9 +285,9 @@ public class POSMsgDaqPanel extends JPanel {
     	public void actionPerformed(ActionEvent param1ActionEvent) {
     		
     		isConnected = false;
-			POSMsgDaqPanel.this.b_connect.setEnabled(true);
-        	POSMsgDaqPanel.this.b_disconnect.setEnabled(false);
-        	JOptionPane.showMessageDialog(null, "Disconnected from Poseidoon Server Successfully !!");
+			  POSMsgDaqPanel.this.b_connect.setEnabled(true);
+        POSMsgDaqPanel.this.b_disconnect.setEnabled(false);
+        JOptionPane.showMessageDialog(null, "Disconnected from Poseidoon Server Successfully !!");
 			
     	}
     });

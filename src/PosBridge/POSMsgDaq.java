@@ -125,34 +125,27 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 	@Override
 	public void addData(PamObservable observable, PamDataUnit pamDataUnit) {
 		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	public void updateData(PamObservable observable, PamDataUnit pamDataUnit) {
 		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	public void removeObservable(PamObservable observable) {
 		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	public void setSampleRate(float sampleRate, boolean notify) {
-		
 		acquisition_control.acquisitionParameters.sampleRate = sampleRate;
 		this.sampleRate = (int) sampleRate;
-		//		System.out.println("Acquisition set sample rate to " + sampleRate);
-		
 	}
 
 	@Override
 	public void noteNewSettings() {
 		// TODO Auto-generated method stub
-
 	}
 
 	@Override
@@ -164,7 +157,6 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 	@Override
 	public void masterClockUpdate(long milliSeconds, long sampleNumber) {
 		// TODO Auto-generated method stub
-
 	}
 
 	@Override
@@ -176,7 +168,6 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 	@Override
 	public void receiveSourceNotification(int type, Object object) {
 		// TODO Auto-generated method stub
-
 	}
 
 	@Override
@@ -249,19 +240,15 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 	@Override
 	public boolean prepareSystem(AcquisitionControl daqControl) {
 		System.out.println("DaqSystem:Prepare system.");
-		
 		/*
 		 * æ­¤éƒ¨åˆ†ç¨‹å¼�ç¢¼ä¾†è‡ª SimProcess Class
 		 * ç›®çš„ç‚ºæº–å‚™ä¸€å€‹Threadå°‡æŠ“åˆ°çš„è³‡æ–™æ”¾åˆ°è©²Threadè£¡é�¢å�šæ¨¡æ“¬
 		 */
 		this.newDataUnits = daqControl.getDaqProcess().getNewDataQueue();
 		if (this.newDataUnits == null) return false;
-//		genThread = new GenerationThread();
-//		theThread = new Thread(genThread);
 		startTimeMillis = System.currentTimeMillis();
 		totalSamples = 0;
 		dataUnitSamples = (int) (daqControl.acquisitionParameters.sampleRate/10);
-		
 		
 		if (!this.params.m_status) {
 			acquisition_control.getDaqProcess().pamStop();
@@ -294,8 +281,6 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 			System.out.println("Starting system failed: connection status is false");
 			return false;
 		}
-//		Thread thread = new Thread(new DataStreamThread());
-//		thread.start();
 		setStreamStatus(STREAM_RUNNING);
 		TopToolBar.enableStartButton(false);
 		TopToolBar.enableStopButton(true);
@@ -306,7 +291,6 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 	public void stopSystem(AcquisitionControl daqControl) {
 		dontStop = false;
 		setStreamStatus(STREAM_CLOSED);
-		
 	}
 
 	@Override
@@ -340,11 +324,6 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 		
 		String urlStr = this.params.uri;
 		String getUrlStr = urlStr;
-		
-//		HttpURLConnection urlConnection = null;  
-//		OutputStream os = null;
-//		InputStream is = null;
-		
 		Map<String, Object> rtnMap = new HashMap<String, Object>();
 		
 		try {
@@ -358,13 +337,11 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 			os = urlConnection.getOutputStream();
 			is = urlConnection.getInputStream();
 			
-			
 			if(!"".equals(this.timestamp.toString())) {
 				String param = "time_stamp="+this.timestamp.toString();
 				os.write(param.getBytes());
 			}
 			os.flush();
-			
 			
 			int responseCode = urlConnection.getResponseCode();
 			System.out.println("POST Response Code :: " + responseCode);
@@ -386,36 +363,25 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 					
 					System.out.println(response.toString());
 					JSONArray array = new JSONArray(response.toString());
-//					System.out.println(array);
-					
+
 					String sampleRate = "51200";
 					
 					StringBuilder sb = new StringBuilder();
 					
 					String recordStr = "0";
 					
-//					int record = 0;
-//					int countData = 0;
-					
 					this.dataNoiseLst = new ArrayList<double[]>();
 					
 					countData = 0;
 					
 					for(Object obj : array) {
-						
 						JSONObject json = new JSONObject(obj.toString());  
-						
 						if(json.has("record")) {
-							
 							recordStr = json.get("record").toString();
 							record = Integer.parseInt(recordStr);
 						}
-						
 					}
-					
 				}
-				
-				
 			} else {
 				System.out.println("POST request not worked");
 			}
@@ -425,16 +391,13 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 		} catch (IOException ex) {
 			return null;
         }
-		
 		rtnMap.put("HttpURLConnection", urlConnection);
 		rtnMap.put("OutputStream", os);
 		rtnMap.put("InputStream", is);
-		
 		return rtnMap;	
 	}
 	
 	public boolean closeConn() {
-		
 		try {
 			if(os != null) {
 				os.close();
@@ -452,7 +415,6 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 			return false;
 		}
 		return true;
-		
 	}
 	
 	
@@ -473,18 +435,12 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 				 * get it's act together on a timer and use this data
 				 * unit, then set it's reference to zero.
 				 */
-//				while (newDataUnits.getQueueSize() > acquisition_control.acquisitionParameters.nChannels*2) {
-//					if (dontStop == false) break;
-//				}
 				try {
 					Thread.sleep(2000);
 				} catch (Exception ex) {
 					ex.printStackTrace();
 				}
 			  }
-			
-//			closeConnection();
-			
 			stillRunning = false;
 		}
 
@@ -501,25 +457,18 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 		int nSource = 0;
 		int nSamples = params.sampleRate;
 		
-//		double nse = 6.924;
 		double nse = 2.589;
 		
 		double[] channelData;
 		long currentTimeMillis = startTimeMillis + totalSamples / 1000;
 		channelData = new double[nSamples];
 		
-		
-		
 		if(!generateNoise(channelData, nse)) {
 			JOptionPane.showMessageDialog(null, "Invalid Poseidoon Server Data !!");
 		}
 		
-//		generateNoise1(channelData, nse);
-		
 		for(int i = 0; i< nChan; i++) {
 			channelData = new double[nSamples];
-			
-//			double dbNse = 96.812;
 			double dbNse = 20.25;
 			
 			System.out.println("Comparing data ..... ");
@@ -541,42 +490,21 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 				}	
 			}
 			
-			
 			for(int j = 0 ; j<this.countData && this.countData == this.dataNoiseLst.size() ; j++) {
 				rdu = new RawDataUnit(currentTimeMillis/2, 1<<i, totalSamples, nSamples/2);
 				rdu.setRawData(this.dataNoiseLst.get(j), true);
 		
 				System.out.println("drawing "+(j+1)+" record data");
-				
-				
-//				try {
-//					this.fos.write("********(DRAWING DATA )*************\r\n".getBytes());
-//					this.fos.write(Arrays.toString(this.dataNoiseLst.get(j)).subSequence(0, 600).toString().getBytes());
-//					this.fos.write("\r\n*********************\r\n\r\n".getBytes());
-//					this.fos.flush();
-//				} catch (IOException e) {
-//					// TODO Auto-generated catch block
-//					e.printStackTrace();
-//				}
-				
-				
 				newDataUnits.addNewData(rdu, i);
 				if(isFirst) {
 					newDataUnits.addNewData(rdu, i);
 					isFirst = false;
 				}
-					
 				totalSamples += nSamples;
 			}
 			
 			
 		}
-		
-//		PamCalendar.setSoundFileTimeInMillis(totalSamples * 1000L / (long)nSamples);
-//		currentTimeMillis += nSamples;
-//		this.sp.updateObjectPositions(currentTimeMillis);
-//		updateObjectPositions(currentTimeMillis);
-//		totalSamples += nSamples;
 	}
 	
 	
@@ -597,12 +525,10 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 			this.url = new URL(getUrlStr);
 			this.conn = (HttpURLConnection) url.openConnection();
 			
-			
 			// Request setup
 			this.conn.setRequestMethod("GET");
 			this.conn.setConnectTimeout(2000);// 5000 milliseconds = 5 seconds
 			this.conn.setReadTimeout(2000);
-			
 			
 			int status = this.conn.getResponseCode();
 			
@@ -631,7 +557,6 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 		try {
 			this.reader.close();
 			this.conn.disconnect();
-			
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			JOptionPane.showMessageDialog(null, "fail to close connection !!");
@@ -640,19 +565,6 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 		return true;
 		
 	}
-	
-	private void generateNoise1(double[] data, double noise) {
-		
-		Random rand = new Random();
-		
-		for(int i=0;i<51200;i++) {
-			data[i] = rand.nextDouble();
-//			data[i] = 0.125;
-		}
-		
-		this.dataNoiseLst.add(data);
-	}
-	
 	
 	/**
 	 * Generate noise on a data channel
@@ -666,19 +578,15 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 		String getUrlStr = urlStr;
 		
 		try{
-			
-			
 			if(!"".equals(this.timestamp.toString())) {
 				getUrlStr = getUrlStr + "?time_stamp="+this.timestamp.toString();
 			}
 			URL url = new URL(getUrlStr);
 			
-			
 			HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
 			urlConnection.setRequestMethod("GET");
 			urlConnection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
 			urlConnection.setDoOutput(true);
-			
 			
 			// Test if the response from the server is successful
 			int responseCode = urlConnection.getResponseCode();
@@ -700,8 +608,6 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 			
 			if(!"".equals(responseContent.toString())) {
 				
-//				System.out.println(responseContent.toString());
-				
 				JSONArray array = new JSONArray(responseContent.toString());
 				
 				String sampleRate = "51200";
@@ -709,7 +615,6 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 				StringBuilder sb = new StringBuilder();
 				
 				String recordStr = "0";
-				
 				
 				this.dataNoiseLst = new ArrayList<double[]>();
 				
@@ -733,10 +638,6 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 						int i=array1.length()-1;
 						for(Object obj1 : array1) {
 							data[i] = Double.parseDouble(obj1.toString());
-//							this.fos.write("--------------------------\r\n".getBytes());
-//							this.fos.write(("data["+i+"] :" + data[i]).getBytes());
-//							this.fos.write(" >> ".getBytes());
-//							this.fos.flush();
 							i--;
 						}
 						
@@ -750,7 +651,6 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 						System.out.println(sampleRate); 
 						String timestamp_tmp = json.get("time_stamp").toString();  
 						this.timestamp = timestamp_tmp.substring(0,23);
-						
 						
 						countData++;
 						
@@ -773,9 +673,7 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 			e.printStackTrace();
 			JOptionPane.showMessageDialog(null, "fail to connect server !!");
 		} 
-		
 		return record == countData;
-		
 	}
 	
 
