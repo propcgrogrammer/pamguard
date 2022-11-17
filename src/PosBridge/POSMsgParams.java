@@ -19,5 +19,7 @@ public class POSMsgParams {
   public String uri = "";
   
   public int sampleRate = 0;
+
+  public boolean isConnected = false;
   
 }

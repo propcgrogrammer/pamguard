@@ -320,104 +320,6 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 		return plugin_name;
 	}
 	
-	public Map estConnection() {
-		
-		String urlStr = this.params.uri;
-		String getUrlStr = urlStr;
-		Map<String, Object> rtnMap = new HashMap<String, Object>();
-		
-		try {
-			
-			URL url = new URL(getUrlStr);
-			urlConnection = (HttpURLConnection) url.openConnection();
-			urlConnection.setRequestMethod("POST");
-			urlConnection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
-			
-			urlConnection.setDoOutput(true);
-			os = urlConnection.getOutputStream();
-			is = urlConnection.getInputStream();
-			
-			if(!"".equals(this.timestamp.toString())) {
-				String param = "time_stamp="+this.timestamp.toString();
-				os.write(param.getBytes());
-			}
-			os.flush();
-			
-			int responseCode = urlConnection.getResponseCode();
-			System.out.println("POST Response Code :: " + responseCode);
-			
-			if (responseCode == HttpURLConnection.HTTP_OK) { //success
-				is = urlConnection.getInputStream();
-				BufferedReader in = new BufferedReader(new InputStreamReader(is));
-				String inputLine;
-				StringBuffer response = new StringBuffer();
-
-				while ((inputLine = in.readLine()) != null) {
-					response.append(inputLine);
-				}
-
-				// print result
-				System.out.println(response.toString());
-				
-				if(!"".equals(response.toString())) {
-					
-					System.out.println(response.toString());
-					JSONArray array = new JSONArray(response.toString());
-
-					String sampleRate = "51200";
-					
-					StringBuilder sb = new StringBuilder();
-					
-					String recordStr = "0";
-					
-					this.dataNoiseLst = new ArrayList<double[]>();
-					
-					countData = 0;
-					
-					for(Object obj : array) {
-						JSONObject json = new JSONObject(obj.toString());  
-						if(json.has("record")) {
-							recordStr = json.get("record").toString();
-							record = Integer.parseInt(recordStr);
-						}
-					}
-				}
-			} else {
-				System.out.println("POST request not worked");
-			}
-			
-		} catch (MalformedURLException e) {
-			return null;
-		} catch (IOException ex) {
-			return null;
-        }
-		rtnMap.put("HttpURLConnection", urlConnection);
-		rtnMap.put("OutputStream", os);
-		rtnMap.put("InputStream", is);
-		return rtnMap;	
-	}
-	
-	public boolean closeConn() {
-		try {
-			if(os != null) {
-				os.close();
-				os = null;
-			}
-			if(is != null) {
-				is.close();
-				is = null;
-			}
-			if(urlConnection != null) {
-				urlConnection.disconnect();
-				urlConnection = null;
-			}
-		} catch (IOException e) {
-			return false;
-		}
-		return true;
-	}
-	
-	
 	/**n
 	 * æ­¤æ®µç¨‹å¼�ç¢¼ä¾†è‡ª SimProcess Class
 	 *
@@ -427,8 +329,11 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 		@Override
 		public void run() {
 			stillRunning = true;
-			
-			  while (dontStop) {
+
+			if(!this.param.isConnected){
+				JOptionPane.showMessageDialog(null, "please reconnect to Poseidoon Server Data !!");
+			}
+			while (dontStop && this.param.isConnected) {
 				generateData();
 				/*
 				 * this is the point we wait at for the other thread to
@@ -440,7 +345,7 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 				} catch (Exception ex) {
 					ex.printStackTrace();
 				}
-			  }
+			}
 			stillRunning = false;
 		}
 
