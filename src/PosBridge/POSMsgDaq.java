@@ -329,11 +329,10 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 		@Override
 		public void run() {
 			stillRunning = true;
-
-			if(!this.param.isConnected){
+			if(!params.isConnected){
 				JOptionPane.showMessageDialog(null, "please reconnect to Poseidoon Server Data !!");
 			}
-			while (dontStop && this.param.isConnected) {
+			while (dontStop && params.isConnected) {
 				generateData();
 				/*
 				 * this is the point we wait at for the other thread to
