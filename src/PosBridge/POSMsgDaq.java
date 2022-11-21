@@ -1,28 +1,6 @@
 package PosBridge;
 
-import Acquisition.AcquisitionControl;
-import Acquisition.AcquisitionDialog;
-import Acquisition.AudioDataQueue;
-import Acquisition.DaqSystem;
-import PamController.PamControlledUnitSettings;
-import PamController.PamSettingManager;
-import PamController.PamSettings;
-import PamDetection.RawDataUnit;
-import PamUtils.PamCalendar;
-import PamView.TopToolBar;
-import PamguardMVC.PamDataUnit;
-import PamguardMVC.PamObservable;
-import PamguardMVC.PamObserver;
-import simulatedAcquisition.SimObject;
-import simulatedAcquisition.SimObjectDataUnit;
-import simulatedAcquisition.SimObjectsDataBlock;
-import simulatedAcquisition.SimProcess;
-
-import java.awt.BorderLayout;
-import java.io.BufferedInputStream;
 import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -32,23 +10,28 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.ListIterator;
-import java.util.Map;
-import java.util.Random;
-import java.util.concurrent.BlockingQueue;
 
 import javax.swing.JComponent;
-import javax.swing.JFrame;
 import javax.swing.JOptionPane;
-import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
 
-import org.apache.commons.collections.map.HashedMap;
 import org.json.JSONArray;
 import org.json.JSONObject;
+
+import Acquisition.AcquisitionControl;
+import Acquisition.AcquisitionDialog;
+import Acquisition.AudioDataQueue;
+import Acquisition.DaqSystem;
+import PamController.PamControlledUnitSettings;
+import PamController.PamSettingManager;
+import PamController.PamSettings;
+import PamDetection.RawDataUnit;
+import PamView.TopToolBar;
+import PamguardMVC.PamDataUnit;
+import PamguardMVC.PamObservable;
+import PamguardMVC.PamObserver;
+import simulatedAcquisition.SimObjectsDataBlock;
+import simulatedAcquisition.SimProcess;
 
 public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 	public static String plugin_name = "Poseidoon plugin";
@@ -61,9 +44,6 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 	
 	private SimProcess sp = null;
 	
-	/*
-	 * ServeræŠ“åˆ°çš„è³‡æ–™ç•¶æˆ� AudioFile ç”¢ç”Ÿçš„éŸ³è¨Šï¼Œä¸¦æ”¾åˆ° AudioDataQueue è£¡é�¢
-	 */
 	protected AudioDataQueue newDataUnits;
 	
 	private GenerationThread genThread;
@@ -241,8 +221,7 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 	public boolean prepareSystem(AcquisitionControl daqControl) {
 		System.out.println("DaqSystem:Prepare system.");
 		/*
-		 * æ­¤éƒ¨åˆ†ç¨‹å¼�ç¢¼ä¾†è‡ª SimProcess Class
-		 * ç›®çš„ç‚ºæº–å‚™ä¸€å€‹Threadå°‡æŠ“åˆ°çš„è³‡æ–™æ”¾åˆ°è©²Threadè£¡é�¢å�šæ¨¡æ“¬
+		 * prepare for the daq system
 		 */
 		this.newDataUnits = daqControl.getDaqProcess().getNewDataQueue();
 		if (this.newDataUnits == null) return false;
@@ -265,8 +244,7 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 	public boolean startSystem(AcquisitionControl daqControl) {
 		
 		/*
-		 * æ­¤éƒ¨åˆ†ç¨‹å¼�ç¢¼ä¾†è‡ª SimProcess Class
-		 * åŸ·è¡Œè©²Threadè£¡é�¢çš„è³‡æ–™
+		 * startSystem Starts this daq system.
 		 */
 		dontStop = true;
 		genThread = new GenerationThread();
@@ -320,9 +298,8 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 		return plugin_name;
 	}
 	
-	/**n
-	 * æ­¤æ®µç¨‹å¼�ç¢¼ä¾†è‡ª SimProcess Class
-	 *
+	/**
+	 * the thread that can hold the process
 	 */
 	class GenerationThread implements Runnable {
 
@@ -351,7 +328,7 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 	}
 	
 	/*
-	 * ç”¢ç”Ÿéš¨æ©Ÿè³‡æ–™çš„å¯¦ä½œæ–¹æ³•
+	 * generate the data
 	 */
 	private void generateData() {
 		
