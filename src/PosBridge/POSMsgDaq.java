@@ -317,7 +317,7 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 				 * unit, then set it's reference to zero.
 				 */
 				try {
-					Thread.sleep(2000);
+					Thread.sleep(500); // loop frequency is 0.5s
 				} catch (Exception ex) {
 					ex.printStackTrace();
 				}
