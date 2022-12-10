@@ -22,10 +22,13 @@ import Acquisition.AcquisitionControl;
 import Acquisition.AcquisitionDialog;
 import Acquisition.AudioDataQueue;
 import Acquisition.DaqSystem;
+import Acquisition.DaqSystemInterface;
 import PamController.PamControlledUnitSettings;
 import PamController.PamSettingManager;
 import PamController.PamSettings;
 import PamDetection.RawDataUnit;
+import PamModel.PamDependency;
+import PamModel.PamPluginInterface;
 import PamView.TopToolBar;
 import PamguardMVC.PamDataUnit;
 import PamguardMVC.PamObservable;
@@ -40,10 +43,6 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 	
 	int sampleRate = 0;
 	
-	private SimObjectsDataBlock simObjectsDataBlock;
-	
-	private SimProcess sp = null;
-	
 	protected AudioDataQueue newDataUnits;
 	
 	private GenerationThread genThread;
@@ -51,14 +50,10 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 	private Thread theThread;
 	
 	private volatile boolean dontStop;
-
-	private volatile boolean stillRunning;
 	
 	private volatile long startTimeMillis;
 	
 	private volatile long totalSamples;
-	
-	private int dataUnitSamples;
 
 	private POSMsgDaqPanel ros_msg_daq_panel;
 
@@ -83,23 +78,16 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 	
 	private BufferedReader reader = null;
 	
-	private HttpURLConnection urlConnection = null;  
 	
-	private OutputStream os = null;
 	
-	private InputStream is = null;
-	
-
 	@Override
 	public String getUnitName() {
-		// TODO Auto-generated method stub
-		return null;
+		return acquisition_control.getUnitName();
 	}
 
 	@Override
 	public long getRequiredDataHistory(PamObservable observable, Object arg) {
-		// TODO Auto-generated method stub
-		return 0;
+		return 0L;
 	}
 
 	@Override
@@ -109,12 +97,11 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 
 	@Override
 	public void updateData(PamObservable observable, PamDataUnit pamDataUnit) {
-		// TODO Auto-generated method stub
 	}
 
 	@Override
 	public void removeObservable(PamObservable observable) {
-		// TODO Auto-generated method stub
+		System.out.println("QQQQQQQQQQQQQQQQQQQQQQQ");
 	}
 
 	@Override
@@ -125,23 +112,20 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 
 	@Override
 	public void noteNewSettings() {
-		// TODO Auto-generated method stub
+		System.out.println("ccccccc");
 	}
 
 	@Override
 	public String getObserverName() {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
 	public void masterClockUpdate(long milliSeconds, long sampleNumber) {
-		// TODO Auto-generated method stub
 	}
 
 	@Override
 	public PamObserver getObserverObject() {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
@@ -152,50 +136,50 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 
 	@Override
 	public String getUnitType() {
-		// TODO Auto-generated method stub
-		return null;
+		return "Poseidoon plugin_Params";
 	}
 
 	@Override
 	public Serializable getSettingsReference() {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
 	public long getSettingsVersion() {
-		// TODO Auto-generated method stub
-		return 0;
+		return 0L;
 	}
 
 	@Override
 	public boolean restoreSettings(PamControlledUnitSettings pamControlledUnitSettings) {
-		// TODO Auto-generated method stub
-		return false;
+		try {
+		      System.out.println("restore settings");
+		    } catch (Exception exception) {
+		      System.out.println("exception happen");
+		    } 
+		    return false;
 	}
 
-	@Override
 	public String getSystemType() {
 		return plugin_name;
 	}
 
-	@Override
 	public String getSystemName() {
 		return plugin_name;
 	}
 
-	@Override
 	public JComponent getDaqSpecificDialogComponent(AcquisitionDialog acquisitionDialog) {
 		if (this.ros_msg_daq_panel == null)
 			this.ros_msg_daq_panel = new POSMsgDaqPanel(acquisitionDialog, this.params);
 		return this.ros_msg_daq_panel;
 	}
+	
+	public void setSelected(boolean paramBoolean) {}
+	  
+	  public void notifyModelChanged(int paramInt) {}
 
-	@Override
 	public void dialogSetParams() {
 	}
 
-	@Override
 	public boolean dialogGetParams() {
 		if (this.ros_msg_daq_panel == null)
 			return false;
@@ -227,7 +211,6 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 		if (this.newDataUnits == null) return false;
 		startTimeMillis = System.currentTimeMillis();
 		totalSamples = 0;
-		dataUnitSamples = (int) (daqControl.acquisitionParameters.sampleRate/10);
 		
 		if (!this.params.m_status) {
 			acquisition_control.getDaqProcess().pamStop();
@@ -236,7 +219,6 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 		}
 		acquisition_control = daqControl;
 		this.params.m_audioDataQueue = acquisition_control.getDaqProcess().getNewDataQueue();
-		this.sp = new SimProcess(acquisition_control);
 		return true;
 	}
 
@@ -268,18 +250,19 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 	@Override
 	public void stopSystem(AcquisitionControl daqControl) {
 		dontStop = false;
+		this.pam_stop = true;
+	    TopToolBar.enableStartButton(true);
+	    TopToolBar.enableStopButton(false);
 		setStreamStatus(STREAM_CLOSED);
 	}
 
 	@Override
 	public boolean isRealTime() {
-		// TODO Auto-generated method stub
 		return true;
 	}
 
 	@Override
 	public boolean canPlayBack(float sampleRate) {
-		// TODO Auto-generated method stub
 		return false;
 	}
 
@@ -292,6 +275,32 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 	public void daqHasEnded() {
 		System.out.println("Daq has ended.");
 	}
+	
+	public boolean areSampleSettingsOk(int paramInt, float paramFloat) {
+	    return true;
+	}
+	
+	public void showSampleSettingsDialog(AcquisitionDialog paramAcquisitionDialog) {}
+	
+	public boolean supportsChannelLists() {
+	    return false;
+	}
+	
+	public double getChannelGain(int paramInt) {
+	    return 0.0D;
+	  }
+	  
+	  public int getSampleBits() {
+	    return 24;
+	  }
+	  
+	  public long getStallCheckSeconds() {
+	    return 2L;
+	  }
+	  
+	  public void dialogFXSetParams() {}
+	  
+	
 
 	@Override
 	public String getDeviceName() {
@@ -305,7 +314,6 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 
 		@Override
 		public void run() {
-			stillRunning = true;
 			if(!params.isConnected){
 				JOptionPane.showMessageDialog(null, "please reconnect to Poseidoon Server Data !!");
 			}
@@ -322,7 +330,6 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 					ex.printStackTrace();
 				}
 			}
-			stillRunning = false;
 		}
 
 	}
@@ -601,4 +608,5 @@ public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 		this.params.m_audioDataQueue = new AudioDataQueue();
 		PamSettingManager.getInstance().registerSettings(this);
 	}
+
 }
