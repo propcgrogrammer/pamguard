@@ -173,7 +173,7 @@ public class AcquisitionControl extends PamControlledUnit implements PamSettings
 		/*
 		 * 此處為 ROSMsgDaq 套件新增地方
 		 */
-		registerDaqSystem(new POSMsgDaq(this));
+//		registerDaqSystem(new POSMsgDaq(this));
 //		registerDaqSystem(new XArrayDaq(this));
 		if (SMRUEnable.isEnable()) {
 //			registerDaqSystem(new icListenSystem());
