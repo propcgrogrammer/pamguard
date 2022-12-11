@@ -4,7 +4,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
 import java.io.Serializable;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
@@ -22,19 +21,14 @@ import Acquisition.AcquisitionControl;
 import Acquisition.AcquisitionDialog;
 import Acquisition.AudioDataQueue;
 import Acquisition.DaqSystem;
-import Acquisition.DaqSystemInterface;
 import PamController.PamControlledUnitSettings;
 import PamController.PamSettingManager;
 import PamController.PamSettings;
 import PamDetection.RawDataUnit;
-import PamModel.PamDependency;
-import PamModel.PamPluginInterface;
 import PamView.TopToolBar;
 import PamguardMVC.PamDataUnit;
 import PamguardMVC.PamObservable;
 import PamguardMVC.PamObserver;
-import simulatedAcquisition.SimObjectsDataBlock;
-import simulatedAcquisition.SimProcess;
 
 public class POSMsgDaq extends DaqSystem implements PamSettings, PamObserver {
 	public static String plugin_name = "Poseidoon plugin";
