@@ -27,10 +27,6 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.border.TitledBorder;
 
-import org.java_websocket.client.WebSocketClient;
-import org.java_websocket.drafts.Draft;
-import org.java_websocket.drafts.Draft_6455;
-import org.java_websocket.handshake.ServerHandshake;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -120,62 +116,6 @@ public class POSMsgDaqPanel extends JPanel {
     		String str = "http://"+POSMsgDaqPanel.this.tf_server.getText()+":"
     				+ POSMsgDaqPanel.this.tf_topic.getText();
     		
-    		try {
-    			
-    			params.m_msgList_ch1 = (BlockingQueue)new LinkedBlockingQueue<>();
-                params.m_msgList_ch2 = (BlockingQueue)new LinkedBlockingQueue<>();
-                
-                params.m_ws = new WebSocketClient(new URI(str), (Draft)new Draft_6455()) {
-                	public void onMessage(String param2String) {
-                		
-                		JSONObject jSONObject1 = new JSONObject(param2String);
-                        JSONObject jSONObject2 = (JSONObject)jSONObject1.get("msg");
-                        JSONArray jSONArray1 = jSONObject2.getJSONArray("data_ch1");
-                        JSONArray jSONArray2 = jSONObject2.getJSONArray("data_ch2");
-                        double[] arrayOfDouble1 = new double[jSONArray1.length()];
-                        double[] arrayOfDouble2 = new double[jSONArray1.length()];
-                        
-                        for (byte b = 0; b < jSONArray1.length(); b++) {
-                            arrayOfDouble1[b] = jSONArray1.getDouble(b);
-                            arrayOfDouble2[b] = jSONArray2.getDouble(b);
-                        } 
-                        
-                        try {
-                            params.m_msgList_ch1.put(arrayOfDouble1);
-                            params.m_msgList_ch2.put(arrayOfDouble2);
-                        } catch (Exception exception) {
-                            System.out.println("exception happened in onMessage method");
-                        } 
-                        
-                	}
-                	
-                	public void onOpen(ServerHandshake param2ServerHandshake) {
-                        System.out.println("connection opened");
-                      }
-                      
-                      public void onClose(int param2Int, String param2String, boolean param2Boolean) {
-                        System.out.println("connection closed");
-                      }
-                      
-                      public void onError(Exception param2Exception) {
-                        param2Exception.printStackTrace();
-                      }
-                	
-                };
-                
-                params.m_status = true;
- 
-    		}catch (URISyntaxException uRISyntaxException) {
-                System.out.println(uRISyntaxException);
-            } 
-    		
-    		if (params.m_status) {
-            params.m_ws.connect();
-            try {
-              Thread.sleep(1000L);
-            } catch (Exception exception) {
-              System.out.println(exception);
-            } 
                 
             HttpURLConnection conn = null;
                 
@@ -256,8 +196,7 @@ public class POSMsgDaqPanel extends JPanel {
         				
         			}
         			
-        		}
-        		catch (MalformedURLException e) {
+        		}catch (MalformedURLException e) {
         			e.printStackTrace();
         			JOptionPane.showMessageDialog(null, "Malformed URL !!");
         			
@@ -268,7 +207,7 @@ public class POSMsgDaqPanel extends JPanel {
         		}finally {
         			conn.disconnect();
         		}
-        } 
+        
     	}
     });
     
