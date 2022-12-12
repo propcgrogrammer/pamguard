@@ -195,6 +195,7 @@ public class POSMsgDaqPanel extends JPanel {
         				acquisition_dialog.getSampleRateComponent().setEditable(false);
         				
         			}
+        			params.m_status = true;
         			
         		}catch (MalformedURLException e) {
         			e.printStackTrace();
